@@ -1,62 +1,169 @@
 # tvweather
 
-A C++ TurboVision starter project scaffolded around a small `tvweather` application.
+A terminal weather application for Portugal, built with C++ and [TurboVision](https://github.com/magiblot/tvision). Data is sourced from the [IPMA open API](https://api.ipma.pt) (Instituto Português do Mar e da Atmosfera).
 
-## Layout
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ Weather                                                                      ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  ╔══════════════════ Lisboa - 5-Day Forecast ══════════════════╗             ║
+║  ║ Date         Min  Max  Rain  Wind     Conditions            ║             ║
+║  ║ ─────────────────────────────────────────────────────────── ║             ║
+║  ║ 2026-04-02    11   23    0%  N 2      Partly cloudy         ║             ║
+║  ║ 2026-04-03    10   26    0%  N 2      Partly cloudy         ║             ║
+║  ║ 2026-04-04    14   26    0%  NW 1     Clear sky             ║             ║
+║  ║ 2026-04-05    13   28    0%  N 1      Clear sky             ║             ║
+║  ║ 2026-04-06    11   24   35%  SW 2     Partly cloudy         ║             ║
+║  ╚══════════════════════════════════════════════════════════════╝             ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ Ctrl-Q Exit                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
 
-- `external/tvision`: vendored TurboVision submodule
-- `include/tvweather`: public app headers
-- `src`: application implementation
-- `app`: executable entry point
+## Features
 
-## Prerequisites
+- **Location picker** — all IPMA forecast locations (mainland Portugal + Madeira + Azores)
+- **5-day forecast** — min/max temperature, precipitation probability, wind direction and speed class, weather condition
+- **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
+- Multiple forecast windows can be open simultaneously (tiled or overlapping)
 
-- CMake 3.21 or newer
-- A C++17 compiler
-- A terminal environment supported by TurboVision
+## Requirements
 
-TurboVision handles its own platform-specific terminal linkage. On Linux, you may need the `ncursesw` development package installed before configuring the project. On Windows, the scaffold is set up for MSVC and TurboVision's Win32 console backend.
+| Requirement | Version |
+|---|---|
+| CMake | 3.21+ |
+| C++ compiler | C++17 (AppleClang, Clang, GCC, MSVC) |
+| curl | Available at runtime for API calls |
+| Internet | Required at launch and when fetching warnings |
 
-## Getting Started
-
-Clone with submodules or initialize them after cloning:
-
+On Linux, install the `ncursesw` development package before configuring:
 ```sh
+# Debian / Ubuntu
+sudo apt install libncursesw5-dev
+```
+
+## Build
+
+Clone with the TurboVision submodule:
+```sh
+git clone --recurse-submodules <repo-url>
+# or after cloning:
 git submodule update --init --recursive
 ```
 
-Configure and build:
-
+Configure and build (macOS / Linux):
 ```sh
 cmake --preset unix-debug
 cmake --build --preset unix-debug
 ```
 
-Run the starter application:
-
+Run:
 ```sh
 ./build/unix-debug/bin/tvweather
 ```
 
-## Windows Build
-
-Configure and build with Visual Studio 2022:
+### Windows (MSVC)
 
 ```powershell
 cmake --preset windows-msvc-debug
-cmake --build --preset windows-debug
+cmake --build --preset windows-msvc-debug
+.\build\windows-msvc-debug\bin\Debug\tvweather.exe
 ```
 
-The executable will be written under:
+### Manual configuration (no presets)
 
-```powershell
-build/windows-msvc-debug/bin/Debug/tvweather.exe
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+./build/bin/tvweather
 ```
 
-## Starter App
+## Usage
 
-The scaffold opens a small TurboVision window on launch. Use:
+The app fetches the location list on startup, then opens the location picker.
 
-- `Ctrl-Q` to quit
-- `F2` to reopen the starter window
-- `F10` to open the menu bar
+| Key | Action |
+|---|---|
+| `F10` | Open the menu bar |
+| `W` (in menu) | Open the Weather menu |
+| Arrow keys | Navigate lists and windows |
+| `Enter` | Confirm selection |
+| `Esc` | Cancel / close dialog |
+| `Ctrl-Q` | Quit |
+
+**Weather menu items:**
+
+| Item | Description |
+|---|---|
+| Pick Location… | Opens the location picker; selecting a city fetches and displays its 5-day forecast |
+| Active Warnings | Fetches and displays current non-green meteorological warnings |
+| Exit | Quit the application |
+
+> **Note on green warnings:** The IPMA API publishes baseline "green" entries for every location and hazard type regardless of risk. tvweather filters these out and only shows yellow, orange and red warnings.
+
+## Project Structure
+
+```
+tvweather/
+├── app/
+│   └── main.cpp                  # Entry point
+├── lib/                          # ipmalib — data layer (no TurboVision)
+│   ├── include/ipma/
+│   │   ├── Models.h              # Plain data structs
+│   │   └── Client.h             # IpmaClient declaration
+│   └── IpmaClient.cpp            # HTTP (curl) + JSON parsing
+├── include/tvweather/            # UI layer headers
+│   ├── Commands.h                # App command IDs
+│   ├── TvWeatherApp.h
+│   ├── LocationPickerDialog.h
+│   ├── ForecastWindow.h
+│   └── WarningsWindow.h
+├── src/                          # UI layer implementation
+│   ├── TvWeatherApp.cpp
+│   ├── LocationPickerDialog.cpp
+│   ├── ForecastWindow.cpp
+│   └── WarningsWindow.cpp
+├── tests/
+│   └── IpmaClientTest.cpp        # Unit tests for ipmalib
+├── external/
+│   └── tvision/                  # TurboVision submodule
+└── CMakeLists.txt
+```
+
+### Dependency boundary
+
+```
+ipmalib  (nlohmann/json + curl, no TurboVision)
+    └── tvweather_core  (TurboVision UI, no JSON)
+            └── tvweather  (executable)
+```
+
+`ipmalib` has no TurboVision dependency and can be built and tested independently. UI components receive model structs by value — they perform no network calls.
+
+## Testing
+
+Unit tests cover the JSON parsing layer (`IpmaClient::parse*` methods) without making any network calls:
+
+```sh
+cd build/unix-debug   # or build/
+ctest --output-on-failure
+```
+
+Tests include:
+- Location parsing from the wrapped `{"data": [...]}` IPMA envelope
+- Forecast parsing with numeric-string fields (`"tMin": "11.8"`) and null values
+- Warning filtering (green entries excluded)
+- Warning display fields (`awarenessTypeName`, `idAreaAviso`)
+- Weather type lookup
+- Malformed / empty JSON resilience
+
+## IPMA API Endpoints
+
+| Endpoint | Used for |
+|---|---|
+| `/open-data/distrits-islands.json` | Location list |
+| `/open-data/forecast/meteorology/cities/daily/{id}.json` | 5-day forecast |
+| `/open-data/forecast/warnings/warnings_www.json` | Active warnings |
+| `/open-data/weather-type-classe.json` | Weather condition descriptions |
+
+All requests are made via `curl` (blocking, 10 s timeout). Failures return empty results; the UI handles this gracefully.
