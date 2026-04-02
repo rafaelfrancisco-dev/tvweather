@@ -38,12 +38,28 @@ std::vector<IpmaLocation> IpmaClient::parseLocations(const std::string& raw)
     try {
         // Root: { "owner": "IPMA", "country": "PT", "data": [...] }
         const auto j = json::parse(raw);
+        auto safeDouble = [](const json& obj, const char* key) -> std::optional<double> {
+            const auto it = obj.find(key);
+            if (it == obj.end() || it->is_null())
+                return std::nullopt;
+            if (it->is_number())
+                return it->get<double>();
+            if (it->is_string()) {
+                try {
+                    return std::stod(it->get<std::string>());
+                } catch (...) {}
+            }
+            return std::nullopt;
+        };
+
         for (const auto& item : j.value("data", json::array())) {
             IpmaLocation loc;
             loc.globalIdLocal = item.value("globalIdLocal", 0);
             loc.local         = item.value("local", "");
             loc.idRegiao      = std::to_string(item.value("idRegiao", 0));
             loc.idAreaAviso   = item.value("idAreaAviso", "");
+            loc.latitude      = safeDouble(item, "latitude");
+            loc.longitude     = safeDouble(item, "longitude");
             if (!loc.local.empty())
                 out.push_back(std::move(loc));
         }
@@ -185,6 +201,20 @@ std::vector<IpmaSeaLocation> IpmaClient::parseSeaLocations(const std::string& ra
     std::vector<IpmaSeaLocation> out;
     try {
         const auto j = json::parse(raw);
+        auto safeDouble = [](const json& obj, const char* key) -> std::optional<double> {
+            const auto it = obj.find(key);
+            if (it == obj.end() || it->is_null())
+                return std::nullopt;
+            if (it->is_number())
+                return it->get<double>();
+            if (it->is_string()) {
+                try {
+                    return std::stod(it->get<std::string>());
+                } catch (...) {}
+            }
+            return std::nullopt;
+        };
+
         const json* items = nullptr;
         if (j.is_array())
             items = &j;
@@ -198,6 +228,8 @@ std::vector<IpmaSeaLocation> IpmaClient::parseSeaLocations(const std::string& ra
             IpmaSeaLocation loc;
             loc.globalIdLocal = item.value("globalIdLocal", 0);
             loc.local         = item.value("local", "");
+            loc.latitude      = safeDouble(item, "latitude");
+            loc.longitude     = safeDouble(item, "longitude");
             if (!loc.local.empty())
                 out.push_back(std::move(loc));
         }

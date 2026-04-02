@@ -2,6 +2,7 @@
 #include "MiniTest.h"
 
 #include "ipma/Client.h"
+#include <cmath>
 
 // ── Fixture JSON strings (captured from real API responses) ──────────────────
 
@@ -9,9 +10,9 @@ static const char* kLocationsJson = R"({
     "owner": "IPMA",
     "country": "PT",
     "data": [
-        {"globalIdLocal": 1110600, "local": "Lisboa",  "idRegiao": 1, "idAreaAviso": "LIS"},
-        {"globalIdLocal": 1131200, "local": "Porto",   "idRegiao": 1, "idAreaAviso": "PRT"},
-        {"globalIdLocal": 2310300, "local": "Funchal", "idRegiao": 2, "idAreaAviso": "MAD"}
+        {"globalIdLocal": 1110600, "local": "Lisboa",  "idRegiao": 1, "idAreaAviso": "LIS", "latitude": "38.7167", "longitude": "-9.1333"},
+        {"globalIdLocal": 1131200, "local": "Porto",   "idRegiao": 1, "idAreaAviso": "PRT", "latitude": "41.1496", "longitude": "-8.6109"},
+        {"globalIdLocal": 2310300, "local": "Funchal", "idRegiao": 2, "idAreaAviso": "MAD", "latitude": "32.6669", "longitude": "-16.9241"}
     ]
 })";
 
@@ -67,6 +68,10 @@ TEST_CASE("parseLocations: parses data array from wrapped JSON")
     CHECK(locs[0].local         == "Lisboa");
     CHECK(locs[0].idRegiao      == "1");
     CHECK(locs[0].idAreaAviso   == "LIS");
+    REQUIRE(locs[0].latitude.has_value());
+    REQUIRE(locs[0].longitude.has_value());
+    CHECK(std::abs(*locs[0].latitude - 38.7167) < 0.0001);
+    CHECK(std::abs(*locs[0].longitude + 9.1333) < 0.0001);
 
     CHECK(locs[1].local == "Porto");
     CHECK(locs[2].local == "Funchal");
@@ -228,9 +233,9 @@ TEST_CASE("parseUv: empty on malformed JSON")
 // ── parseSeaLocations ─────────────────────────────────────────────────────────
 
 static const char* kSeaLocationsJson = R"([
-    {"globalIdLocal": 1130826, "local": "Porto, costa"},
-    {"globalIdLocal": 1111026, "local": "Lisboa, costa"},
-    {"globalIdLocal": 1080526, "local": "Faro, costa"}
+    {"globalIdLocal": 1130826, "local": "Porto, costa", "latitude": "41.175", "longitude": "-8.76"},
+    {"globalIdLocal": 1111026, "local": "Lisboa, costa", "latitude": "38.65", "longitude": "-9.31"},
+    {"globalIdLocal": 1080526, "local": "Faro, costa", "latitude": "37.0017", "longitude": "-8.0"}
 ])";
 
 static const char* kSeaLocationsWrappedJson = R"({
@@ -249,6 +254,10 @@ TEST_CASE("parseSeaLocations: parses coastal locations")
 
     CHECK(locs[0].globalIdLocal == 1130826);
     CHECK(locs[0].local         == "Porto, costa");
+    REQUIRE(locs[0].latitude.has_value());
+    REQUIRE(locs[0].longitude.has_value());
+    CHECK(std::abs(*locs[0].latitude - 41.175) < 0.0001);
+    CHECK(std::abs(*locs[0].longitude + 8.76) < 0.0001);
     CHECK(locs[1].local         == "Lisboa, costa");
     CHECK(locs[2].globalIdLocal == 1080526);
 }

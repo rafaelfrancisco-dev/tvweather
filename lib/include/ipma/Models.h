@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -7,6 +8,8 @@ struct IpmaLocation {
     std::string local;
     std::string idRegiao;
     std::string idAreaAviso;
+    std::optional<double> latitude;
+    std::optional<double> longitude;
 };
 
 struct IpmaForecastDay {
@@ -50,6 +53,8 @@ struct IpmaUvEntry {
 struct IpmaSeaLocation {
     int         globalIdLocal;
     std::string local;
+    std::optional<double> latitude;
+    std::optional<double> longitude;
 };
 
 struct IpmaSeaForecastDay {

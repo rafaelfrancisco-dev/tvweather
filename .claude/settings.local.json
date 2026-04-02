@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.ipma.pt)",
+      "Bash(curl --version)",
+      "Bash(cmake --preset unix-debug)",
+      "Bash(cmake:*)",
+      "Bash(curl -s \"https://api.ipma.pt/open-data/distrits-islands.json\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json\")",
+      "Bash(curl -s \"https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/1110600.json\")",
+      "Bash(git add:*)",
+      "Bash(ctest:*)"
+    ]
+  }
+}

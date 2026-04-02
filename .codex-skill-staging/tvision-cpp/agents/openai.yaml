@@ -1,0 +1,4 @@
+interface:
+  display_name: "TVision C++"
+  short_description: "Turbo Vision C++ terminal UI work"
+  default_prompt: "Use $tvision-cpp to help me implement or debug a Turbo Vision C++ application."
