@@ -35,8 +35,12 @@ TEST_CASE("uiStrings returns localized chrome labels")
 {
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).optionsMenu)
           == "~O~ptions");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).weatherMenu)
+          == "~M~eteorologia");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).optionsMenu)
-          == "~O~pcoes");
+          == "~O~pções");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).optionsDialogTitle)
+          == "Opções");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastDetails)
           == "Details");
 }

@@ -7,7 +7,50 @@
 #include "tvweather/Settings.h"
 #include "tvweather/WarningsWindow.h"
 
+#include <cctype>
+
 namespace {
+
+class TopLevelMnemonicMenuBar final : public TMenuBar
+{
+public:
+    TopLevelMnemonicMenuBar(const TRect& bounds, TSubMenu& menu) noexcept
+        : TMenuBar(bounds, menu)
+    {
+        options |= ofPostProcess;
+    }
+
+    void handleEvent(TEvent& event) override
+    {
+        if (event.what == evKeyDown &&
+            owner != nullptr &&
+            owner->phase == TGroup::phPostProcess) {
+            const char mnemonic = matchingTopLevelMnemonic(event.keyDown.charScan.charCode);
+            if (mnemonic != 0) {
+                TEvent translated = event;
+                translated.keyDown.keyCode = getAltCode(mnemonic);
+                translated.keyDown.charScan.charCode = 0;
+                TMenuBar::handleEvent(translated);
+                if (translated.what == evNothing)
+                    clearEvent(event);
+                return;
+            }
+        }
+
+        TMenuBar::handleEvent(event);
+    }
+
+private:
+    char matchingTopLevelMnemonic(char typed) noexcept
+    {
+        if (typed == 0)
+            return 0;
+
+        const char upperTyped = static_cast<char>(
+            std::toupper(static_cast<unsigned char>(typed)));
+        return findItem(upperTyped) != nullptr ? upperTyped : 0;
+    }
+};
 
 TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
 {
@@ -17,7 +60,7 @@ TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
         : kbAltW;
     bounds.b.y = bounds.a.y + 1;
 
-    return new TMenuBar(bounds,
+    return new TopLevelMnemonicMenuBar(bounds,
         *new TSubMenu(strings.weatherMenu, weatherMenuKey) +
             *new TMenuItem(strings.pickLocation, cmOpenLocationPicker, kbF3, hcNoContext, "F3") +
             *new TMenuItem(strings.activeWarnings, cmShowWarnings, kbF4, hcNoContext, "F4") +

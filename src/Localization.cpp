@@ -44,34 +44,34 @@ const UiStrings kPortugueseStrings {
     "~E~scolher Localidade...",
     "Avisos ~A~tivos",
     "Sai~r~",
-    "~O~pcoes",
-    "~P~referencias...",
+    "~O~pções",
+    "~P~referências...",
     "~Ctrl-Q~ Sair",
-    "Opcoes",
+    "Opções",
     "Idioma",
-    "~I~ngles",
-    "~P~ortugues",
+    "~I~nglês",
+    "~P~ortuguês",
     "~O~K",
     "Escolher Localidade",
-    "~A~brir Previsao",
+    "~A~brir Previsão",
     "~C~ancelar",
     "Data",
     "Min",
     "Max",
     "Chuva",
     "Vento",
-    "Condicoes",
+    "Condições",
     "Resumo",
     "Detalhes",
     "Temperatura",
     "Risco de chuva",
     "Intensidade do vento",
     "Navegar",
-    "Sem dados de previsao.",
+    "Sem dados de previsão.",
     "Avisos Ativos",
     "Sem avisos ativos.",
     "De:",
-    "Ate:"
+    "Até:"
 };
 
 } // namespace
@@ -86,7 +86,7 @@ const UiStrings& uiStrings(Language language) noexcept
 std::string forecastWindowTitle(const std::string& localName, Language language)
 {
     const char* suffix = language == Language::Portuguese
-        ? " - Previsao de 5 dias"
+        ? " - Previsão de 5 dias"
         : " - 5-Day Forecast";
     return localName + suffix;
 }
