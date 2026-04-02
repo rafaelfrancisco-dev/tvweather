@@ -16,6 +16,7 @@
 #include <tvision/tv.h>
 
 #include "ipma/Client.h"
+#include "tvweather/Language.h"
 #include <string>
 #include <vector>
 
@@ -30,10 +31,16 @@ private:
     static TMenuBar*    initMenuBar(TRect bounds);
     static TStatusLine* initStatusLine(TRect bounds);
 
+    void refreshLanguage(tvweather::Language language);
+    void rebuildMenuBar();
+    void rebuildStatusLine();
+    void refreshOpenWindows();
+    void showOptions();
     void showLocationPicker();
     void showForecast(int globalIdLocal, const std::string& localName);
     void showWarnings();
 
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
+    tvweather::Language          language_ {tvweather::Language::English};
 };

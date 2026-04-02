@@ -5,9 +5,19 @@
 #include <tvision/tv.h>
 
 #include "ipma/Models.h"
+#include "tvweather/Language.h"
 #include <vector>
 
 class WarningsWindow : public TWindow {
 public:
-    explicit WarningsWindow(const std::vector<IpmaWarning>& warnings);
+    explicit WarningsWindow(const std::vector<IpmaWarning>& warnings,
+                            tvweather::Language             language);
+
+    void setLanguage(tvweather::Language language);
+
+private:
+    void updateTitle();
+
+    std::vector<IpmaWarning> warnings_;
+    tvweather::Language      language_;
 };

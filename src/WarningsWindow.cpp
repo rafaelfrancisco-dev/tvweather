@@ -8,7 +8,9 @@
 #include <tvision/tv.h>
 
 #include "tvweather/WarningsWindow.h"
+#include "tvweather/Localization.h"
 #include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 
@@ -29,9 +31,11 @@ class WarningsView : public TScroller {
 public:
     WarningsView(const TRect& bounds,
                  TScrollBar*  vScrollBar,
-                 const std::vector<IpmaWarning>& warnings)
+                 const std::vector<IpmaWarning>& warnings,
+                 tvweather::Language             language)
         : TScroller(bounds, nullptr, vScrollBar),
-          warnings_(warnings)
+          warnings_(warnings),
+          language_(language)
     {
         // 3 lines per warning; at least 1 for the "no warnings" message
         const int total = warnings_.empty()
@@ -40,15 +44,22 @@ public:
         setLimit(0, total);
     }
 
+    void setLanguage(tvweather::Language language)
+    {
+        language_ = language;
+        drawView();
+    }
+
     void draw() override
     {
+        const auto& strings = tvweather::uiStrings(language_);
         TColorAttr color = getColor(1);
         TDrawBuffer b;
         int y = 0;
 
         if (warnings_.empty()) {
             b.moveChar(0, ' ', color, (ushort)size.x);
-            b.moveStr(1, "No active warnings.", color, (ushort)(size.x - 2));
+            b.moveStr(1, strings.warningsEmpty, color, (ushort)(size.x - 2));
             writeLine(0, y++, size.x, 1, b);
         } else {
             const int startLine = delta.y;
@@ -72,7 +83,8 @@ public:
                 if (line >= startLine && y < size.y) {
                     b.moveChar(0, ' ', color, (ushort)size.x);
                     const std::string t =
-                        "  From: " + w.startTime + "  To: " + w.endTime;
+                        std::string("  ") + strings.warningsFrom + " " + w.startTime
+                        + "  " + strings.warningsTo + " " + w.endTime;
                     b.moveStr(1, t.c_str(), color, (ushort)(size.x - 2));
                     writeLine(0, y++, size.x, 1, b);
                 }
@@ -96,17 +108,22 @@ public:
 
 private:
     std::vector<IpmaWarning> warnings_;
+    tvweather::Language      language_;
 };
 
 } // namespace
 
 // ── WarningsWindow ────────────────────────────────────────────────────────────
 
-WarningsWindow::WarningsWindow(const std::vector<IpmaWarning>& warnings)
+WarningsWindow::WarningsWindow(const std::vector<IpmaWarning>& warnings,
+                               tvweather::Language             language)
     : TWindowInit(TWindow::initFrame),
-      TWindow(TRect(3, 2, 77, 22), "Active Warnings", wnNoNumber)
+      TWindow(TRect(3, 2, 77, 22), "", wnNoNumber),
+      warnings_(warnings),
+      language_(language)
 {
     options |= ofTileable;
+    updateTitle();
 
     auto* sb = new TScrollBar(TRect(size.x - 1, 1, size.x, size.y - 1));
     insert(sb);
@@ -114,5 +131,28 @@ WarningsWindow::WarningsWindow(const std::vector<IpmaWarning>& warnings)
     TRect r = getExtent();
     r.grow(-1, -1);
     r.b.x -= 1; // room for scrollbar
-    insert(new WarningsView(r, sb, warnings));
+    insert(new WarningsView(r, sb, warnings_, language_));
+}
+
+void WarningsWindow::setLanguage(tvweather::Language language)
+{
+    language_ = language;
+    updateTitle();
+
+    for (TView* view = first(); view != nullptr; view = view->nextView()) {
+        if (auto* warningsView = dynamic_cast<WarningsView*>(view)) {
+            warningsView->setLanguage(language_);
+            break;
+        }
+        if (view == last)
+            break;
+    }
+
+    drawView();
+}
+
+void WarningsWindow::updateTitle()
+{
+    delete[] const_cast<char*>(title);
+    title = newStr(tvweather::uiStrings(language_).warningsTitle);
 }

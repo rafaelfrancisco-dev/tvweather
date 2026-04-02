@@ -25,6 +25,8 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 - **Location picker** — all IPMA forecast locations (mainland Portugal + Madeira + Azores)
 - **5-day forecast** — min/max temperature, precipitation probability, wind direction and speed class, weather condition
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
+- **Options dialog** — dedicated settings window for app preferences
+- **Language switching** — English/Portuguese UI toggle persisted across restarts
 - Multiple forecast windows can be open simultaneously (tiled or overlapping)
 
 ## Requirements
@@ -86,6 +88,7 @@ The app fetches the location list on startup, then opens the location picker.
 |---|---|
 | `F10` | Open the menu bar |
 | `W` (in menu) | Open the Weather menu |
+| `O` (in menu) | Open the Options menu |
 | Arrow keys | Navigate lists and windows |
 | `Enter` | Confirm selection |
 | `Esc` | Cancel / close dialog |
@@ -98,6 +101,12 @@ The app fetches the location list on startup, then opens the location picker.
 | Pick Location… | Opens the location picker; selecting a city fetches and displays its 5-day forecast |
 | Active Warnings | Fetches and displays current non-green meteorological warnings |
 | Exit | Quit the application |
+
+**Options menu items:**
+
+| Item | Description |
+|---|---|
+| Preferences... | Opens a dedicated options dialog; currently used to change the UI language |
 
 > **Note on green warnings:** The IPMA API publishes baseline "green" entries for every location and hazard type regardless of risk. tvweather filters these out and only shows yellow, orange and red warnings.
 
@@ -114,17 +123,26 @@ tvweather/
 │   └── IpmaClient.cpp            # HTTP (curl) + JSON parsing
 ├── include/tvweather/            # UI layer headers
 │   ├── Commands.h                # App command IDs
+│   ├── Language.h                # UI language enum
+│   ├── Localization.h            # App-owned translated strings
+│   ├── Settings.h                # Persisted app settings
 │   ├── TvWeatherApp.h
+│   ├── OptionsDialog.h
 │   ├── LocationPickerDialog.h
 │   ├── ForecastWindow.h
 │   └── WarningsWindow.h
 ├── src/                          # UI layer implementation
 │   ├── TvWeatherApp.cpp
+│   ├── Localization.cpp
+│   ├── Settings.cpp
+│   ├── OptionsDialog.cpp
 │   ├── LocationPickerDialog.cpp
 │   ├── ForecastWindow.cpp
 │   └── WarningsWindow.cpp
 ├── tests/
-│   └── IpmaClientTest.cpp        # Unit tests for ipmalib
+│   ├── MiniTest.h                # Lightweight local test harness
+│   ├── IpmaClientTest.cpp        # Unit tests for ipmalib
+│   └── TvWeatherSupportTest.cpp  # Unit tests for settings/localization support
 ├── external/
 │   └── tvision/                  # TurboVision submodule
 └── CMakeLists.txt
@@ -142,7 +160,7 @@ ipmalib  (nlohmann/json + curl, no TurboVision)
 
 ## Testing
 
-Unit tests cover the JSON parsing layer (`IpmaClient::parse*` methods) without making any network calls:
+Unit tests cover the JSON parsing layer (`IpmaClient::parse*` methods) and the localization/settings helpers without making any network calls:
 
 ```sh
 cd build/unix-debug   # or build/
@@ -155,7 +173,13 @@ Tests include:
 - Warning filtering (green entries excluded)
 - Warning display fields (`awarenessTypeName`, `idAreaAviso`)
 - Weather type lookup
+- Language selection/persistence (`en` / `pt`)
+- Localized weather description lookup
 - Malformed / empty JSON resilience
+
+## Turbo Vision Notes
+
+For settings UI, tvweather uses the standard Turbo Vision pattern of a modal `TDialog` containing controls such as `TRadioButtons` and `TButton`, instead of putting individual toggles directly in the menu. This keeps the current language selector idiomatic and leaves room to add more settings to the same options window later.
 
 ## IPMA API Endpoints
 

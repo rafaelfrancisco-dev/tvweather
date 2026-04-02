@@ -6,6 +6,8 @@
 #include <tvision/tv.h>
 
 #include "tvweather/ForecastWindow.h"
+#include "tvweather/Localization.h"
+#include <algorithm>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -17,33 +19,39 @@
 namespace
 {
 
-std::string descForType(const std::vector<IpmaWeatherType>& types, int id)
-{
-    for (const auto& t : types)
-        if (t.id == id)
-            return t.descEN.empty() ? t.descPT : t.descEN;
-    return "-";
-}
-
 class ForecastView : public TView {
 public:
     ForecastView(const TRect& bounds,
                  const IpmaForecast& forecast,
-                 const std::vector<IpmaWeatherType>& weatherTypes)
+                 const std::vector<IpmaWeatherType>& weatherTypes,
+                 tvweather::Language language)
         : TView(bounds),
           forecast_(forecast),
-          weatherTypes_(weatherTypes)
+          weatherTypes_(weatherTypes),
+          language_(language)
     {}
+
+    void setLanguage(tvweather::Language language)
+    {
+        language_ = language;
+        drawView();
+    }
 
     void draw() override
     {
+        const auto& strings = tvweather::uiStrings(language_);
         TColorAttr color = getColor(1);
         TDrawBuffer b;
 
         // ── Header row ──────────────────────────────────────────────────────
         b.moveChar(0, ' ', color, (ushort)size.x);
-        b.moveStr(0, " Date         Min  Max  Rain  Wind     Conditions",
-                  color, (ushort)(size.x - 1));
+        b.moveStr(1, strings.forecastDate, color, 11);
+        b.moveStr(13, strings.forecastMin, color, 3);
+        b.moveStr(18, strings.forecastMax, color, 3);
+        b.moveStr(23, strings.forecastRain, color, 5);
+        b.moveStr(29, strings.forecastWind, color, 8);
+        b.moveStr(38, strings.forecastConditions, color,
+                  (ushort)std::max(0, size.x - 39));
         writeLine(0, 0, size.x, 1, b);
 
         // ── Separator ───────────────────────────────────────────────────────
@@ -79,8 +87,8 @@ public:
             b.moveStr(28, wind.c_str(), color, 9);
 
             // Conditions  (col 38, remaining width)
-            const std::string cond =
-                descForType(weatherTypes_, day.idWeatherType);
+            const std::string cond = tvweather::weatherDescriptionForType(
+                weatherTypes_, day.idWeatherType, language_);
             b.moveStr(38, cond.c_str(), color,
                       (ushort)std::max(0, size.x - 39));
 
@@ -96,6 +104,7 @@ public:
 private:
     IpmaForecast                  forecast_;
     std::vector<IpmaWeatherType>  weatherTypes_;
+    tvweather::Language           language_;
 };
 
 } // namespace
@@ -103,14 +112,39 @@ private:
 // ── ForecastWindow ────────────────────────────────────────────────────────────
 
 ForecastWindow::ForecastWindow(const IpmaForecast&                forecast,
-                               const std::vector<IpmaWeatherType>& weatherTypes)
+                               const std::vector<IpmaWeatherType>& weatherTypes,
+                               tvweather::Language                 language)
     : TWindowInit(TWindow::initFrame),
-      TWindow(TRect(2, 1, 78, 14), (forecast.localName + " - 5-Day Forecast").c_str(), wnNoNumber)
+      TWindow(TRect(2, 1, 78, 14), "", wnNoNumber),
+      forecast_(forecast),
+      weatherTypes_(weatherTypes),
+      language_(language)
 {
     options |= ofTileable;
+    updateTitle();
 
     TRect r = getExtent();
     r.grow(-1, -1);
-    insert(new ForecastView(r, forecast, weatherTypes));
+    insert(new ForecastView(r, forecast_, weatherTypes_, language_));
 }
 
+void ForecastWindow::setLanguage(tvweather::Language language)
+{
+    language_ = language;
+    updateTitle();
+    for (TView* view = first(); view != nullptr; view = view->nextView()) {
+        if (auto* forecastView = dynamic_cast<ForecastView*>(view)) {
+            forecastView->setLanguage(language_);
+            break;
+        }
+        if (view == last)
+            break;
+    }
+    drawView();
+}
+
+void ForecastWindow::updateTitle()
+{
+    delete[] const_cast<char*>(title);
+    title = newStr(tvweather::forecastWindowTitle(forecast_.localName, language_).c_str());
+}

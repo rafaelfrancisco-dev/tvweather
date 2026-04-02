@@ -8,6 +8,7 @@
 #include <tvision/tv.h>
 
 #include "tvweather/LocationPickerDialog.h"
+#include "tvweather/Localization.h"
 #include <algorithm>
 
 // Dialog is 52 wide x 20 tall, centered on screen.
@@ -17,11 +18,13 @@
 //   Buttons: row 17-18
 
 LocationPickerDialog::LocationPickerDialog(
-    const std::vector<IpmaLocation>& locations)
+    const std::vector<IpmaLocation>& locations,
+    tvweather::Language              language)
     : TWindowInit(TWindow::initFrame),
-      TDialog(TRect(0, 0, 52, 20), "Pick Location"),
+      TDialog(TRect(0, 0, 52, 20), tvweather::uiStrings(language).locationDialogTitle),
       sorted_(locations)
 {
+    const auto& strings = tvweather::uiStrings(language);
     options |= ofCentered;
 
     std::sort(sorted_.begin(), sorted_.end(),
@@ -41,8 +44,8 @@ LocationPickerDialog::LocationPickerDialog(
         sc->insert(newStr(loc.local.c_str()));
     listBox_->newList(sc);
 
-    insert(new TButton(TRect(4,  17, 22, 19), "~O~pen Forecast", cmOK,     bfDefault));
-    insert(new TButton(TRect(26, 17, 44, 19), "~C~ancel",        cmCancel, bfNormal));
+    insert(new TButton(TRect(4,  17, 22, 19), strings.openForecast, cmOK,     bfDefault));
+    insert(new TButton(TRect(26, 17, 44, 19), strings.cancel,       cmCancel, bfNormal));
 }
 
 IpmaLocation LocationPickerDialog::selectedLocation() const
