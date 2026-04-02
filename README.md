@@ -6,15 +6,16 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ Weather                                                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  ╔══════════════════ Lisboa - 5-Day Forecast ══════════════════╗             ║
-║  ║ Date         Min  Max  Rain  Wind     Conditions            ║             ║
-║  ║ ─────────────────────────────────────────────────────────── ║             ║
-║  ║ 2026-04-02    11   23    0%  N 2      Partly cloudy         ║             ║
-║  ║ 2026-04-03    10   26    0%  N 2      Partly cloudy         ║             ║
-║  ║ 2026-04-04    14   26    0%  NW 1     Clear sky             ║             ║
-║  ║ 2026-04-05    13   28    0%  N 1      Clear sky             ║             ║
-║  ║ 2026-04-06    11   24   35%  SW 2     Partly cloudy         ║             ║
-║  ╚══════════════════════════════════════════════════════════════╝             ║
+║  ╔══════════════ Lisboa - 5-Day Forecast ═══════════════╗                    ║
+║  ║ 04-02 11/23   0% │ Details 1/5                       ║                    ║
+║  ║ 04-03 10/26   0% │ 2026-04-02                        ║                    ║
+║  ║ 04-04 14/26   0% │ Partly cloudy                     ║                    ║
+║  ║ 04-05 13/28   0% │ Temperature: 11° / 23°            ║                    ║
+║  ║ 04-06 11/24  35% │ Rain: 0%                          ║                    ║
+║  ║                  │ Rain risk: Low                    ║                    ║
+║  ║                  │ Wind: N / 2                       ║                    ║
+║  ║                  │ Wind strength: Moderate           ║                    ║
+║  ╚═══════════════════════════════════════════════════════╝                    ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║ Ctrl-Q Exit                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -23,7 +24,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 ## Features
 
 - **Location picker** — all IPMA forecast locations (mainland Portugal + Madeira + Azores)
-- **5-day forecast** — min/max temperature, precipitation probability, wind direction and speed class, weather condition
+- **5-day forecast** — split view with a selectable day list plus a detail pane for min/max temperature, precipitation probability, wind direction, wind class, and localized condition text
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
 - **Options dialog** — dedicated settings window for app preferences
 - **Language switching** — English/Portuguese UI toggle persisted across restarts
@@ -89,10 +90,12 @@ The app fetches the location list on startup, then opens the location picker.
 | `F10` | Open the menu bar |
 | `W` (in menu) | Open the Weather menu |
 | `O` (in menu) | Open the Options menu |
-| Arrow keys | Navigate lists and windows |
+| Arrow keys | Navigate lists, forecast days, and windows |
 | `Enter` | Confirm selection |
 | `Esc` | Cancel / close dialog |
 | `Ctrl-Q` | Quit |
+
+In forecast windows, the day list on the left is a standard Turbo Vision list view. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through the available forecast days.
 
 **Weather menu items:**
 

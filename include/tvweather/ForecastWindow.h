@@ -15,7 +15,9 @@ public:
                    const std::vector<IpmaWeatherType>& weatherTypes,
                    tvweather::Language                language);
 
+    void changeBounds(const TRect& bounds) override;
     void setLanguage(tvweather::Language language);
+    void sizeLimits(TPoint& min, TPoint& max) override;
 
 private:
     void updateTitle();

@@ -26,6 +26,13 @@ const UiStrings kEnglishStrings {
     "Rain",
     "Wind",
     "Conditions",
+    "Overview",
+    "Details",
+    "Temperature",
+    "Rain risk",
+    "Wind strength",
+    "Navigate",
+    "No forecast data available.",
     "Active Warnings",
     "No active warnings.",
     "From:",
@@ -54,6 +61,13 @@ const UiStrings kPortugueseStrings {
     "Chuva",
     "Vento",
     "Condicoes",
+    "Resumo",
+    "Detalhes",
+    "Temperatura",
+    "Risco de chuva",
+    "Intensidade do vento",
+    "Navegar",
+    "Sem dados de previsao.",
     "Avisos Ativos",
     "Sem avisos ativos.",
     "De:",
@@ -99,6 +113,24 @@ std::string weatherDescriptionForType(const std::vector<IpmaWeatherType>& types,
         break;
     }
     return "-";
+}
+
+const char* rainRiskLabel(int precipitaProb, Language language) noexcept
+{
+    if (precipitaProb >= 70)
+        return language == Language::Portuguese ? "Alto" : "High";
+    if (precipitaProb >= 30)
+        return language == Language::Portuguese ? "Moderado" : "Moderate";
+    return language == Language::Portuguese ? "Baixo" : "Low";
+}
+
+const char* windStrengthLabel(int classWindSpeed, Language language) noexcept
+{
+    if (classWindSpeed >= 4)
+        return language == Language::Portuguese ? "Forte" : "Strong";
+    if (classWindSpeed >= 2)
+        return language == Language::Portuguese ? "Moderado" : "Moderate";
+    return language == Language::Portuguese ? "Fraco" : "Light";
 }
 
 const char* languageCode(Language language) noexcept

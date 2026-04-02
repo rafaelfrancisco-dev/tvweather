@@ -37,6 +37,27 @@ TEST_CASE("uiStrings returns localized chrome labels")
           == "~O~ptions");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).optionsMenu)
           == "~O~pcoes");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastDetails)
+          == "Details");
+}
+
+TEST_CASE("rainRiskLabel maps precipitation percentages into localized severities")
+{
+    CHECK(std::string(tvweather::rainRiskLabel(10, tvweather::Language::English)) == "Low");
+    CHECK(std::string(tvweather::rainRiskLabel(35, tvweather::Language::English))
+          == "Moderate");
+    CHECK(std::string(tvweather::rainRiskLabel(80, tvweather::Language::Portuguese))
+          == "Alto");
+}
+
+TEST_CASE("windStrengthLabel maps wind classes into localized severities")
+{
+    CHECK(std::string(tvweather::windStrengthLabel(1, tvweather::Language::English))
+          == "Light");
+    CHECK(std::string(tvweather::windStrengthLabel(2, tvweather::Language::Portuguese))
+          == "Moderado");
+    CHECK(std::string(tvweather::windStrengthLabel(5, tvweather::Language::English))
+          == "Strong");
 }
 
 TEST_CASE("loadLanguageFromFile defaults to English when config is missing")

@@ -29,6 +29,13 @@ struct UiStrings {
     const char* forecastRain;
     const char* forecastWind;
     const char* forecastConditions;
+    const char* forecastOverview;
+    const char* forecastDetails;
+    const char* forecastTemperature;
+    const char* forecastRainRisk;
+    const char* forecastWindStrength;
+    const char* forecastNavigation;
+    const char* forecastEmpty;
     const char* warningsTitle;
     const char* warningsEmpty;
     const char* warningsFrom;
@@ -40,6 +47,8 @@ std::string forecastWindowTitle(const std::string& localName, Language language)
 std::string weatherDescriptionForType(const std::vector<IpmaWeatherType>& types,
                                       int id,
                                       Language language);
+const char* rainRiskLabel(int precipitaProb, Language language) noexcept;
+const char* windStrengthLabel(int classWindSpeed, Language language) noexcept;
 const char* languageCode(Language language) noexcept;
 Language languageFromCodeOrDefault(const std::string& code) noexcept;
 
