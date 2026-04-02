@@ -10,12 +10,16 @@ namespace tvweather {
 struct UiStrings {
     const char* weatherMenu;
     const char* pickLocation;
+    const char* clearLocation;
     const char* activeWarnings;
     const char* exitApp;
     const char* optionsMenu;
     const char* preferences;
     const char* statusExit;
     const char* optionsDialogTitle;
+    const char* statusClearLocation;
+    const char* statusLocationPrefix;
+    const char* statusNoLocation;
     const char* languageLabel;
     const char* languageEnglish;
     const char* languagePortuguese;

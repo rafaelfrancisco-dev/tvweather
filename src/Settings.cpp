@@ -11,6 +11,8 @@ namespace fs = std::filesystem;
 
 namespace {
 
+using Json = nlohmann::json;
+
 fs::path settingsDirectory()
 {
 #ifdef _WIN32
@@ -23,6 +25,46 @@ fs::path settingsDirectory()
     return {};
 }
 
+AppSettings parseSettings(const Json& json)
+{
+    AppSettings settings;
+
+    if (json.contains("language") && json["language"].is_string())
+        settings.language = languageFromCodeOrDefault(json["language"].get<std::string>());
+
+    if (json.contains("selectedLocation") && json["selectedLocation"].is_object()) {
+        const auto& location = json["selectedLocation"];
+        if (location.contains("globalIdLocal")
+            && location["globalIdLocal"].is_number_integer()
+            && location.contains("local")
+            && location["local"].is_string()) {
+            SavedLocation savedLocation;
+            savedLocation.globalIdLocal = location["globalIdLocal"].get<int>();
+            savedLocation.local = location["local"].get<std::string>();
+
+            if (savedLocation.globalIdLocal > 0 && !savedLocation.local.empty())
+                settings.selectedLocation = std::move(savedLocation);
+        }
+    }
+
+    return settings;
+}
+
+Json serializeSettings(const AppSettings& settings)
+{
+    Json json;
+    json["language"] = languageCode(settings.language);
+
+    if (settings.selectedLocation.has_value()) {
+        json["selectedLocation"] = {
+            {"globalIdLocal", settings.selectedLocation->globalIdLocal},
+            {"local", settings.selectedLocation->local},
+        };
+    }
+
+    return json;
+}
+
 } // namespace
 
 fs::path defaultSettingsPath()
@@ -33,42 +75,40 @@ fs::path defaultSettingsPath()
     return dir / "config.json";
 }
 
-Language loadLanguage()
+AppSettings loadSettings()
 {
     const fs::path path = defaultSettingsPath();
     if (path.empty())
-        return Language::English;
-    return loadLanguageFromFile(path);
+        return {};
+    return loadSettingsFromFile(path);
 }
 
-Language loadLanguageFromFile(const fs::path& path)
+AppSettings loadSettingsFromFile(const fs::path& path)
 {
     if (path.empty())
-        return Language::English;
+        return {};
 
     std::ifstream input(path);
     if (!input)
-        return Language::English;
+        return {};
 
     try {
-        const auto json = nlohmann::json::parse(input);
-        if (json.contains("language") && json["language"].is_string())
-            return languageFromCodeOrDefault(json["language"].get<std::string>());
+        return parseSettings(Json::parse(input));
     } catch (...) {
     }
 
-    return Language::English;
+    return {};
 }
 
-bool saveLanguage(Language language)
+bool saveSettings(const AppSettings& settings)
 {
     const fs::path path = defaultSettingsPath();
     if (path.empty())
         return false;
-    return saveLanguageToFile(path, language);
+    return saveSettingsToFile(path, settings);
 }
 
-bool saveLanguageToFile(const fs::path& path, Language language)
+bool saveSettingsToFile(const fs::path& path, const AppSettings& settings)
 {
     if (path.empty())
         return false;
@@ -81,13 +121,36 @@ bool saveLanguageToFile(const fs::path& path, Language language)
         if (!output)
             return false;
 
-        nlohmann::json json;
-        json["language"] = languageCode(language);
+        const Json json = serializeSettings(settings);
         output << json.dump(2) << '\n';
         return static_cast<bool>(output);
     } catch (...) {
         return false;
     }
+}
+
+Language loadLanguage()
+{
+    return loadSettings().language;
+}
+
+Language loadLanguageFromFile(const fs::path& path)
+{
+    return loadSettingsFromFile(path).language;
+}
+
+bool saveLanguage(Language language)
+{
+    AppSettings settings = loadSettings();
+    settings.language = language;
+    return saveSettings(settings);
+}
+
+bool saveLanguageToFile(const fs::path& path, Language language)
+{
+    AppSettings settings = loadSettingsFromFile(path);
+    settings.language = language;
+    return saveSettingsToFile(path, settings);
 }
 
 } // namespace tvweather

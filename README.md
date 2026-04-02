@@ -24,6 +24,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 ## Features
 
 - **Location picker with search** — all IPMA forecast locations (mainland Portugal + Madeira + Azores) with a live filter field to narrow by name
+- **Selected location state** — the last picked location becomes the active location, is shown in the status bar, is reused by location-based menus, and persists across restarts until cleared
 - **5-day forecast** — split view with a selectable day list plus a detail pane for min/max temperature, precipitation probability, wind direction, wind class, and localized condition text
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
 - **UV Index** — daily UV index forecast per location with time intervals (e.g. 13h–15h)
@@ -32,6 +33,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 - **Error notifications** — message box shown when API calls fail or return empty data
 - **Options dialog** — dedicated settings window for app preferences
 - **Language switching** — English/Portuguese UI toggle persisted across restarts
+- **Clear location** — remove the active location to force a new pick later
 - Multiple forecast/UV/sea windows can be open simultaneously (tiled or overlapping)
 
 ## Requirements
@@ -87,7 +89,7 @@ cmake --build build
 
 ## Usage
 
-The app fetches the location list on startup, then opens the location picker.
+The app fetches the location list on startup. If no location is already saved, it opens the location picker.
 
 | Key | Action |
 |---|---|
@@ -98,18 +100,28 @@ The app fetches the location list on startup, then opens the location picker.
 | `Enter` | Confirm selection |
 | `Esc` | Cancel / close dialog |
 | `F2` | Refresh data for the active window |
+| `F8` | Clear the active location |
 | `Ctrl-Q` | Quit |
 
 In forecast and sea windows, the day list on the left is a standard Turbo Vision list view. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through the available forecast days.
+
+### Selected location flow
+
+1. Pick a location once with `F3` or at first launch.
+2. The selected location becomes the active location and is shown in the status bar.
+3. `Forecast...` reuses that active location directly.
+4. `UV Index...` reuses that active location directly.
+5. `Sea Conditions...` reuses it when the selected `globalIdLocal` exists in the sea dataset; otherwise it asks for a coastal location.
+6. `Clear Location` removes the active location from memory and from the saved config so the next location-dependent action can ask again.
 
 **Weather menu items:**
 
 | Item | Key | Description |
 |---|---|---|
-| Pick Location… | F3 | Opens the location picker (with search); selecting a city fetches and displays its 5-day forecast |
+| Forecast… | F3 | Opens the forecast for the active location; if none is selected, opens the location picker first |
 | Active Warnings | F4 | Fetches and displays current non-green meteorological warnings |
-| UV Index… | F5 | Opens the location picker; displays daily UV index with time intervals |
-| Sea Conditions… | F6 | Opens a coastal location picker; displays a 3-day sea forecast |
+| UV Index… | F5 | Uses the active location; if none is selected, opens the location picker first |
+| Sea Conditions… | F6 | Uses the active location when it has sea data; otherwise opens a coastal location picker |
 | Exit | Ctrl-Q | Quit the application |
 
 **Options menu items:**
@@ -119,6 +131,35 @@ In forecast and sea windows, the day list on the left is a standard Turbo Vision
 | Preferences... | Opens a dedicated options dialog; currently used to change the UI language |
 
 **Location picker search:** type any part of a location name to filter the list in real time. The search is case-insensitive. Press `Tab` or `Down` to move focus to the filtered list.
+
+**Selected location:** the status bar shows the current active location. Clearing it removes the saved location from the config file, and the next location-dependent action prompts for a new one.
+
+## Settings And Persistence
+
+tvweather stores its config in:
+
+- macOS / Linux: `~/.config/tvweather/config.json`
+- Windows: `%APPDATA%/tvweather/config.json`
+
+Current persisted fields:
+
+- `language`
+- `selectedLocation.globalIdLocal`
+- `selectedLocation.local`
+
+Example:
+
+```json
+{
+  "language": "en",
+  "selectedLocation": {
+    "globalIdLocal": 1110600,
+    "local": "Lisboa"
+  }
+}
+```
+
+If the saved location is missing from the latest IPMA location list, tvweather drops it and falls back to the picker flow.
 
 > **Note on green warnings:** The IPMA API publishes baseline "green" entries for every location and hazard type regardless of risk. tvweather filters these out and only shows yellow, orange and red warnings.
 
@@ -193,6 +234,7 @@ Tests include:
 - Sea location parsing
 - Sea forecast day parsing (wave height, period, direction, SST) with location filtering
 - Language selection/persistence (`en` / `pt`)
+- Selected location load/save/clear behavior
 - Localized weather description lookup
 - Malformed / empty JSON resilience
 

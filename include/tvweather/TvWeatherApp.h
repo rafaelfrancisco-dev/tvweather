@@ -17,6 +17,8 @@
 
 #include "ipma/Client.h"
 #include "tvweather/Language.h"
+#include "tvweather/Settings.h"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,18 +33,26 @@ private:
     static TMenuBar*    initMenuBar(TRect bounds);
     static TStatusLine* initStatusLine(TRect bounds);
 
+    void clearSelectedLocation();
+    bool ensureSelectedLocation();
+    std::optional<tvweather::SavedLocation> pickLocation(const std::vector<IpmaLocation>& locations);
     void refreshLanguage(tvweather::Language language);
     void rebuildMenuBar();
     void rebuildStatusLine();
     void refreshOpenWindows();
+    void saveSettings() const;
+    void selectLocation(const tvweather::SavedLocation& location);
     void showOptions();
+    void showForecast();
     void showLocationPicker();
     void showForecast(int globalIdLocal, const std::string& localName);
     void showWarnings();
     void showUv();
     void showSea();
+    void updateLocationCommandState();
 
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
     tvweather::Language          language_ {tvweather::Language::English};
+    std::optional<tvweather::SavedLocation> selectedLocation_;
 };
