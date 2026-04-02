@@ -56,6 +56,7 @@ private:
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
     tvweather::Language          language_ {tvweather::Language::English};
+    tvweather::SavedPalette      originalPalette_;
     std::optional<tvweather::SavedPalette>  palette_;
     std::optional<tvweather::SavedLocation> selectedLocation_;
 };

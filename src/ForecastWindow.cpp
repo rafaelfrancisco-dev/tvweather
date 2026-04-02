@@ -22,7 +22,8 @@ namespace
 
 constexpr ushort cmForecastDayFocused = 120;
 constexpr int    kHorizontalSplitThreshold = 62;
-constexpr char   cpForecastOverview[] = "\x06\x06\x07\x07\x05";
+constexpr char   cpWindowPane[] = "\x06";
+constexpr char   cpWindowList[] = "\x06\x06\x07\x07\x05";
 
 std::string compactDate(const std::string& forecastDate)
 {
@@ -88,6 +89,12 @@ public:
             buffer.moveChar(0, '-', color, (ushort)size.x);
             writeLine(0, 0, size.x, 1, buffer);
         }
+    }
+
+    TPalette& getPalette() const override
+    {
+        static TPalette palette(cpWindowPane, sizeof(cpWindowPane) - 1);
+        return palette;
     }
 
 private:
@@ -156,6 +163,12 @@ public:
 
     }
 
+    TPalette& getPalette() const override
+    {
+        static TPalette palette(cpWindowPane, sizeof(cpWindowPane) - 1);
+        return palette;
+    }
+
     void handleEvent(TEvent& event) override
     {
         TView::handleEvent(event);
@@ -216,7 +229,7 @@ public:
 
     TPalette& getPalette() const override
     {
-        static TPalette palette(cpForecastOverview, sizeof(cpForecastOverview) - 1);
+        static TPalette palette(cpWindowList, sizeof(cpWindowList) - 1);
         return palette;
     }
 

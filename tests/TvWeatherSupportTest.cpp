@@ -45,6 +45,8 @@ TEST_CASE("uiStrings returns localized chrome labels")
           == "Opções");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).colors)
           == "~C~olors...");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).reset)
+          == "~R~eset");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).statusNoLocation)
           == "Localidade: nenhuma seleccionada");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastDetails)

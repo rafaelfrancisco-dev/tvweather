@@ -25,6 +25,7 @@ struct UiStrings {
     const char* languageEnglish;
     const char* languagePortuguese;
     const char* ok;
+    const char* reset;
     const char* locationDialogTitle;
     const char* openForecast;
     const char* cancel;

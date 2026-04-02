@@ -20,6 +20,8 @@ namespace
 
 constexpr ushort cmSeaDayFocused             = 121;
 constexpr int    kSeaHorizontalSplitThreshold = 60;
+constexpr char   cpWindowPane[] = "\x06";
+constexpr char   cpWindowList[] = "\x06\x06\x07\x07\x05";
 
 std::string compactDate(const std::string& d)
 {
@@ -57,6 +59,12 @@ public:
             b.moveChar(0, '-', color, (ushort)size.x);
             writeLine(0, 0, size.x, 1, b);
         }
+    }
+
+    TPalette& getPalette() const override
+    {
+        static TPalette palette(cpWindowPane, sizeof(cpWindowPane) - 1);
+        return palette;
     }
 
 private:
@@ -132,6 +140,12 @@ public:
         }
     }
 
+    TPalette& getPalette() const override
+    {
+        static TPalette palette(cpWindowPane, sizeof(cpWindowPane) - 1);
+        return palette;
+    }
+
     void handleEvent(TEvent& event) override
     {
         TView::handleEvent(event);
@@ -184,6 +198,12 @@ public:
     {
         language_ = language;
         drawView();
+    }
+
+    TPalette& getPalette() const override
+    {
+        static TPalette palette(cpWindowList, sizeof(cpWindowList) - 1);
+        return palette;
     }
 
     void getText(char* dest, short item, short maxLen) override

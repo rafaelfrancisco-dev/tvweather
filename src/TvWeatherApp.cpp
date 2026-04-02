@@ -1,4 +1,5 @@
 #define Uses_MsgBox
+#define Uses_TButton
 #define Uses_TColorDialog
 #define Uses_TColorGroup
 #define Uses_TColorItem
@@ -24,6 +25,38 @@
 #include <optional>
 
 namespace {
+
+class PaletteDialog final : public TColorDialog
+{
+public:
+    PaletteDialog(const TPalette& palette,
+                  const TPalette& originalPalette,
+                  TColorGroup*    groups,
+                  const char*     resetText) noexcept
+        : TWindowInit(TWindow::initFrame),
+          TColorDialog(nullptr, groups),
+          originalPalette_(originalPalette)
+    {
+        insert(new TButton(TRect(24, 15, 34, 17), resetText, cmResetColors, bfNormal));
+        TPalette initialPalette("", 0);
+        initialPalette = palette;
+        setData(&initialPalette);
+    }
+
+    void handleEvent(TEvent& event) override
+    {
+        if (event.what == evCommand && event.message.command == cmResetColors) {
+            setData(&originalPalette_);
+            clearEvent(event);
+            return;
+        }
+
+        TColorDialog::handleEvent(event);
+    }
+
+private:
+    TPalette originalPalette_;
+};
 
 class TopLevelMnemonicMenuBar final : public TMenuBar
 {
@@ -115,9 +148,27 @@ tvweather::SavedPalette currentPaletteSettings()
     return savedPalette;
 }
 
-TColorGroup& paletteGroups()
+bool samePalette(const tvweather::SavedPalette& left,
+                 const tvweather::SavedPalette& right) noexcept
 {
-    static TColorGroup& groups =
+    return left.mode == right.mode && left.entries == right.entries;
+}
+
+TPalette toPalette(const tvweather::SavedPalette& palette)
+{
+    if (palette.entries.empty())
+        return TPalette("", 0);
+
+    std::vector<TColorAttr> entries;
+    entries.reserve(palette.entries.size());
+    for (const int entry : palette.entries)
+        entries.push_back(static_cast<TColorAttr>(entry));
+    return TPalette(entries.data(), static_cast<ushort>(entries.size()));
+}
+
+TColorGroup* createPaletteGroups()
+{
+    return &(
         *new TColorGroup("Desktop") +
             *new TColorItem("Color", 1) +
 
@@ -247,8 +298,7 @@ TColorGroup& paletteGroups()
             *new TColorItem("List focused", 122) +
             *new TColorItem("List selected", 123) +
             *new TColorItem("List divider", 124) +
-            *new TColorItem("Information pane", 125);
-    return groups;
+            *new TColorItem("Information pane", 125));
 }
 
 const IpmaSeaLocation* findSeaLocation(const std::vector<IpmaSeaLocation>& locations,
@@ -369,6 +419,7 @@ TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
     return new TopLevelMnemonicMenuBar(bounds,
         *new TSubMenu(strings.weatherMenu, weatherMenuKey) +
             *new TMenuItem(strings.pickLocation,    cmShowForecast,       kbF3, hcNoContext, "F3") +
+            newLine() +
             *new TMenuItem(strings.activeWarnings,  cmShowWarnings,       kbF4, hcNoContext, "F4") +
             *new TMenuItem(strings.uvIndex,         cmShowUv,             kbF5, hcNoContext, "F5") +
             *new TMenuItem(strings.seaConditions,   cmShowSea,            kbF6, hcNoContext, "F6") +
@@ -417,6 +468,7 @@ TvWeatherApp::TvWeatherApp() :
 {
     const auto settings = tvweather::loadSettings();
     language_ = settings.language;
+    originalPalette_ = currentPaletteSettings();
     palette_ = settings.palette;
     selectedLocation_ = settings.selectedLocation;
     applySavedPalette(palette_);
@@ -645,17 +697,29 @@ void TvWeatherApp::showOptions()
 
 void TvWeatherApp::showColors()
 {
-    TView* view = validView(new TColorDialog(nullptr, &paletteGroups()));
+    TPalette currentPalette("", 0);
+    currentPalette = getPalette();
+
+    TView* view = validView(
+        new PaletteDialog(currentPalette,
+                          toPalette(originalPalette_),
+                          createPaletteGroups(),
+                          tvweather::uiStrings(language_).reset));
     if (view == nullptr)
         return;
 
-    auto* dialog = static_cast<TColorDialog*>(view);
-    dialog->setData(&getPalette());
+    auto* dialog = static_cast<PaletteDialog*>(view);
 
     if (TProgram::deskTop->execView(dialog) == cmOK) {
-        getPalette() = *dialog->pal;
+        TPalette editedPalette("", 0);
+        dialog->getData(&editedPalette);
+        getPalette() = editedPalette;
         setScreenMode(TScreen::screenMode);
-        palette_ = currentPaletteSettings();
+        const auto currentSettings = currentPaletteSettings();
+        if (samePalette(currentSettings, originalPalette_))
+            palette_.reset();
+        else
+            palette_ = currentSettings;
         saveSettings();
     }
 
