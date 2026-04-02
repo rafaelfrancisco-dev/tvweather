@@ -4,31 +4,35 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║ Weather                                                                      ║
+║ Weather                                                          Options      ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  ╔══════════════ Lisboa - 5-Day Forecast ═══════════════╗                    ║
-║  ║ 04-02 11/23   0% │ Details 1/5                       ║                    ║
-║  ║ 04-03 10/26   0% │ 2026-04-02                        ║                    ║
-║  ║ 04-04 14/26   0% │ Partly cloudy                     ║                    ║
-║  ║ 04-05 13/28   0% │ Temperature: 11° / 23°            ║                    ║
-║  ║ 04-06 11/24  35% │ Rain: 0%                          ║                    ║
-║  ║                  │ Rain risk: Low                    ║                    ║
-║  ║                  │ Wind: N / 2                       ║                    ║
-║  ║                  │ Wind strength: Moderate           ║                    ║
-║  ╚═══════════════════════════════════════════════════════╝                    ║
+║  ╔════════════════ Lisboa - 5-Day Forecast ═════════════════╗                ║
+║  ║ 04-02 11/23   0% │ Details 1/5                           ║                ║
+║  ║ 04-03 10/26   0% │ 2026-04-02                            ║                ║
+║  ║ 04-04 14/26   0% │ Partly cloudy                         ║                ║
+║  ║ 04-05 13/28   0% │ Temperature: 11° / 23°                ║                ║
+║  ║ 04-06 11/24  35% │ Rain: 0%                              ║                ║
+║  ║                  │ Rain risk: Low                        ║                ║
+║  ║                  │ Wind: N / 2                           ║                ║
+║  ║                  │ Wind strength: Moderate               ║                ║
+║  ╚═════════════════════════════════════════════════════════╝                 ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║ Ctrl-Q Exit                                                                  ║
+║ ~Ctrl-Q~ Exit  ~F2~ Refresh                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ## Features
 
-- **Location picker** — all IPMA forecast locations (mainland Portugal + Madeira + Azores)
+- **Location picker with search** — all IPMA forecast locations (mainland Portugal + Madeira + Azores) with a live filter field to narrow by name
 - **5-day forecast** — split view with a selectable day list plus a detail pane for min/max temperature, precipitation probability, wind direction, wind class, and localized condition text
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
+- **UV Index** — daily UV index forecast per location with time intervals (e.g. 13h–15h)
+- **Sea conditions** — 3-day wave height, wave period, wave direction, and sea surface temperature for 12 coastal locations
+- **Refresh** — re-fetch data for the active window at any time with F2
+- **Error notifications** — message box shown when API calls fail or return empty data
 - **Options dialog** — dedicated settings window for app preferences
 - **Language switching** — English/Portuguese UI toggle persisted across restarts
-- Multiple forecast windows can be open simultaneously (tiled or overlapping)
+- Multiple forecast/UV/sea windows can be open simultaneously (tiled or overlapping)
 
 ## Requirements
 
@@ -37,7 +41,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 | CMake | 3.21+ |
 | C++ compiler | C++17 (AppleClang, Clang, GCC, MSVC) |
 | curl | Available at runtime for API calls |
-| Internet | Required at launch and when fetching warnings |
+| Internet | Required at launch and for all data fetches |
 
 On Linux, install the `ncursesw` development package before configuring:
 ```sh
@@ -93,23 +97,28 @@ The app fetches the location list on startup, then opens the location picker.
 | Arrow keys | Navigate lists, forecast days, and windows |
 | `Enter` | Confirm selection |
 | `Esc` | Cancel / close dialog |
+| `F2` | Refresh data for the active window |
 | `Ctrl-Q` | Quit |
 
-In forecast windows, the day list on the left is a standard Turbo Vision list view. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through the available forecast days.
+In forecast and sea windows, the day list on the left is a standard Turbo Vision list view. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through the available forecast days.
 
 **Weather menu items:**
 
-| Item | Description |
-|---|---|
-| Pick Location… | Opens the location picker; selecting a city fetches and displays its 5-day forecast |
-| Active Warnings | Fetches and displays current non-green meteorological warnings |
-| Exit | Quit the application |
+| Item | Key | Description |
+|---|---|---|
+| Pick Location… | F3 | Opens the location picker (with search); selecting a city fetches and displays its 5-day forecast |
+| Active Warnings | F4 | Fetches and displays current non-green meteorological warnings |
+| UV Index… | F5 | Opens the location picker; displays daily UV index with time intervals |
+| Sea Conditions… | F6 | Opens a coastal location picker; displays a 3-day sea forecast |
+| Exit | Ctrl-Q | Quit the application |
 
 **Options menu items:**
 
 | Item | Description |
 |---|---|
 | Preferences... | Opens a dedicated options dialog; currently used to change the UI language |
+
+**Location picker search:** type any part of a location name to filter the list in real time. The search is case-insensitive. Press `Tab` or `Down` to move focus to the filtered list.
 
 > **Note on green warnings:** The IPMA API publishes baseline "green" entries for every location and hazard type regardless of risk. tvweather filters these out and only shows yellow, orange and red warnings.
 
@@ -122,7 +131,7 @@ tvweather/
 ├── lib/                          # ipmalib — data layer (no TurboVision)
 │   ├── include/ipma/
 │   │   ├── Models.h              # Plain data structs
-│   │   └── Client.h             # IpmaClient declaration
+│   │   └── Client.h              # IpmaClient declaration
 │   └── IpmaClient.cpp            # HTTP (curl) + JSON parsing
 ├── include/tvweather/            # UI layer headers
 │   ├── Commands.h                # App command IDs
@@ -133,7 +142,9 @@ tvweather/
 │   ├── OptionsDialog.h
 │   ├── LocationPickerDialog.h
 │   ├── ForecastWindow.h
-│   └── WarningsWindow.h
+│   ├── WarningsWindow.h
+│   ├── UvWindow.h
+│   └── SeaWindow.h
 ├── src/                          # UI layer implementation
 │   ├── TvWeatherApp.cpp
 │   ├── Localization.cpp
@@ -141,7 +152,9 @@ tvweather/
 │   ├── OptionsDialog.cpp
 │   ├── LocationPickerDialog.cpp
 │   ├── ForecastWindow.cpp
-│   └── WarningsWindow.cpp
+│   ├── WarningsWindow.cpp
+│   ├── UvWindow.cpp
+│   └── SeaWindow.cpp
 ├── tests/
 │   ├── MiniTest.h                # Lightweight local test harness
 │   ├── IpmaClientTest.cpp        # Unit tests for ipmalib
@@ -176,6 +189,9 @@ Tests include:
 - Warning filtering (green entries excluded)
 - Warning display fields (`awarenessTypeName`, `idAreaAviso`)
 - Weather type lookup
+- UV index entry parsing (location, UV value, time interval, date)
+- Sea location parsing
+- Sea forecast day parsing (wave height, period, direction, SST) with location filtering
 - Language selection/persistence (`en` / `pt`)
 - Localized weather description lookup
 - Malformed / empty JSON resilience
@@ -183,6 +199,8 @@ Tests include:
 ## Turbo Vision Notes
 
 For settings UI, tvweather uses the standard Turbo Vision pattern of a modal `TDialog` containing controls such as `TRadioButtons` and `TButton`, instead of putting individual toggles directly in the menu. This keeps the current language selector idiomatic and leaves room to add more settings to the same options window later.
+
+The location picker search uses `TInputLine` at the top of the dialog. On each key event, `handleEvent` compares the input value to the previous filter and rebuilds the `TStringCollection` passed to `TListBox::newList()` when it changes. This avoids polling and keeps the list in sync with typing.
 
 ## IPMA API Endpoints
 
@@ -192,5 +210,8 @@ For settings UI, tvweather uses the standard Turbo Vision pattern of a modal `TD
 | `/open-data/forecast/meteorology/cities/daily/{id}.json` | 5-day forecast |
 | `/open-data/forecast/warnings/warnings_www.json` | Active warnings |
 | `/open-data/weather-type-classe.json` | Weather condition descriptions |
+| `/open-data/forecast/meteorology/uv/uv.json` | UV index forecast |
+| `/open-data/sea-locations.json` | Coastal location list |
+| `/open-data/forecast/oceanography/daily/hp-daily-sea-forecast-day{0,1,2}.json` | 3-day sea forecast |
 
-All requests are made via `curl` (blocking, 10 s timeout). Failures return empty results; the UI handles this gracefully.
+All requests are made via `curl` (blocking, 10 s timeout). Failures return empty results and show an error dialog; the app remains usable after a failed fetch.

@@ -9,6 +9,8 @@
 
 #include "tvweather/WarningsWindow.h"
 #include "tvweather/Localization.h"
+#include "tvweather/Commands.h"
+#include "ipma/Client.h"
 #include <algorithm>
 #include <cctype>
 #include <string>
@@ -47,6 +49,16 @@ public:
     void setLanguage(tvweather::Language language)
     {
         language_ = language;
+        drawView();
+    }
+
+    void refresh(const std::vector<IpmaWarning>& newWarnings)
+    {
+        warnings_ = newWarnings;
+        const int total = warnings_.empty()
+            ? 1
+            : static_cast<int>(warnings_.size()) * 3;
+        setLimit(0, total);
         drawView();
     }
 
@@ -149,6 +161,26 @@ void WarningsWindow::setLanguage(tvweather::Language language)
     }
 
     drawView();
+}
+
+void WarningsWindow::handleEvent(TEvent& event)
+{
+    TWindow::handleEvent(event);
+
+    if (event.what == evCommand && event.message.command == cmRefresh) {
+        warnings_ = IpmaClient::fetchWarnings();
+
+        for (TView* view = first(); view != nullptr; view = view->nextView()) {
+            if (auto* warningsView = dynamic_cast<WarningsView*>(view)) {
+                warningsView->refresh(warnings_);
+                break;
+            }
+            if (view == last)
+                break;
+        }
+
+        clearEvent(event);
+    }
 }
 
 void WarningsWindow::updateTitle()

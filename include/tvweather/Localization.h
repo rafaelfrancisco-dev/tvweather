@@ -40,6 +40,18 @@ struct UiStrings {
     const char* warningsEmpty;
     const char* warningsFrom;
     const char* warningsTo;
+    const char* networkError;
+    const char* statusRefresh;
+    const char* uvIndex;
+    const char* uvWindowTitle;
+    const char* uvEmpty;
+    const char* seaConditions;
+    const char* seaWindowSuffix;
+    const char* seaEmpty;
+    const char* seaWaveHeight;
+    const char* seaWavePeriod;
+    const char* seaWaveDir;
+    const char* seaSst;
 };
 
 const UiStrings& uiStrings(Language language) noexcept;

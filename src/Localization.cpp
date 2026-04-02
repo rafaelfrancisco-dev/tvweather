@@ -36,7 +36,19 @@ const UiStrings kEnglishStrings {
     "Active Warnings",
     "No active warnings.",
     "From:",
-    "To:"
+    "To:",
+    "Could not fetch data. Check your internet connection.",
+    "~F2~ Refresh",
+    "~U~V Index...",
+    "UV Index",
+    "No UV data available.",
+    "Sea ~C~onditions...",
+    " - Sea Conditions",
+    "No sea forecast data available.",
+    "Wave",
+    "Period",
+    "Dir",
+    "SST"
 };
 
 const UiStrings kPortugueseStrings {
@@ -71,7 +83,19 @@ const UiStrings kPortugueseStrings {
     "Avisos Ativos",
     "Sem avisos ativos.",
     "De:",
-    "Até:"
+    "Até:",
+    "Não foi possível obter dados. Verifique a sua ligação à internet.",
+    "~F2~ Actualizar",
+    "Índice ~U~V...",
+    "Índice UV",
+    "Sem dados de índice UV.",
+    "~C~ondições do Mar...",
+    " - Condições do Mar",
+    "Sem previsão marítima.",
+    "Ondas",
+    "Período",
+    "Dir",
+    "TSM"
 };
 
 } // namespace

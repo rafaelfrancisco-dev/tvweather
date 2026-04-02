@@ -1,3 +1,4 @@
+#define Uses_MsgBox
 #include "tvweather/TvWeatherApp.h"
 #include "tvweather/Commands.h"
 #include "tvweather/LocationPickerDialog.h"
@@ -6,6 +7,8 @@
 #include "tvweather/Localization.h"
 #include "tvweather/Settings.h"
 #include "tvweather/WarningsWindow.h"
+#include "tvweather/UvWindow.h"
+#include "tvweather/SeaWindow.h"
 
 #include <cctype>
 
@@ -62,8 +65,10 @@ TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
 
     return new TopLevelMnemonicMenuBar(bounds,
         *new TSubMenu(strings.weatherMenu, weatherMenuKey) +
-            *new TMenuItem(strings.pickLocation, cmOpenLocationPicker, kbF3, hcNoContext, "F3") +
-            *new TMenuItem(strings.activeWarnings, cmShowWarnings, kbF4, hcNoContext, "F4") +
+            *new TMenuItem(strings.pickLocation,    cmOpenLocationPicker, kbF3, hcNoContext, "F3") +
+            *new TMenuItem(strings.activeWarnings,  cmShowWarnings,       kbF4, hcNoContext, "F4") +
+            *new TMenuItem(strings.uvIndex,         cmShowUv,             kbF5, hcNoContext, "F5") +
+            *new TMenuItem(strings.seaConditions,   cmShowSea,            kbF6, hcNoContext, "F6") +
             newLine() +
             *new TMenuItem(strings.exitApp, cmQuit, kbCtrlQ, hcNoContext, "Ctrl-Q") +
         *new TSubMenu(strings.optionsMenu, kbAltO) +
@@ -77,7 +82,8 @@ TStatusLine* buildStatusLine(TRect bounds, tvweather::Language language)
 
     return new TStatusLine(bounds,
         *new TStatusDef(0, 0xFFFF) +
-            *new TStatusItem(strings.statusExit, kbCtrlQ, cmQuit) +
+            *new TStatusItem(strings.statusExit,    kbCtrlQ, cmQuit) +
+            *new TStatusItem(strings.statusRefresh, kbF2,    cmRefresh) +
             *new TStatusItem(0, kbF10, cmMenu));
 }
 
@@ -88,6 +94,10 @@ void refreshWindowLanguage(TView* view, void* languagePtr)
         forecastWindow->setLanguage(language);
     else if (auto* warningsWindow = dynamic_cast<WarningsWindow*>(view))
         warningsWindow->setLanguage(language);
+    else if (auto* uvWindow = dynamic_cast<UvWindow*>(view))
+        uvWindow->setLanguage(language);
+    else if (auto* seaWindow = dynamic_cast<SeaWindow*>(view))
+        seaWindow->setLanguage(language);
 }
 
 } // namespace
@@ -102,6 +112,12 @@ TvWeatherApp::TvWeatherApp() :
     rebuildMenuBar();
     locations_    = IpmaClient::fetchLocations();
     weatherTypes_ = IpmaClient::fetchWeatherTypes();
+
+    if (locations_.empty()) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
     showLocationPicker();
 }
 
@@ -117,6 +133,14 @@ void TvWeatherApp::handleEvent(TEvent& event)
             break;
         case cmShowWarnings:
             showWarnings();
+            clearEvent(event);
+            break;
+        case cmShowUv:
+            showUv();
+            clearEvent(event);
+            break;
+        case cmShowSea:
+            showSea();
             clearEvent(event);
             break;
         case cmOpenOptions:
@@ -213,6 +237,10 @@ void TvWeatherApp::showLocationPicker()
 void TvWeatherApp::showForecast(int globalIdLocal, const std::string& localName)
 {
     const auto forecast = IpmaClient::fetchForecast(globalIdLocal, localName);
+    if (forecast.days.empty()) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
     insertWindow(new ForecastWindow(forecast, weatherTypes_, language_));
 }
 
@@ -220,4 +248,59 @@ void TvWeatherApp::showWarnings()
 {
     const auto warnings = IpmaClient::fetchWarnings();
     insertWindow(new WarningsWindow(warnings, language_));
+}
+
+void TvWeatherApp::showUv()
+{
+    if (locations_.empty())
+        return;
+
+    auto* dlg = new LocationPickerDialog(locations_, language_);
+    const ushort result = TProgram::deskTop->execView(dlg);
+    if (result == cmOK) {
+        const auto loc = dlg->selectedLocation();
+        delete dlg;
+        if (loc.globalIdLocal == 0)
+            return;
+        const auto entries = IpmaClient::fetchUv();
+        insertWindow(new UvWindow(entries, loc.globalIdLocal, loc.local, language_));
+    } else {
+        delete dlg;
+    }
+}
+
+void TvWeatherApp::showSea()
+{
+    const auto seaLocations = IpmaClient::fetchSeaLocations();
+    if (seaLocations.empty()) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
+    // Build IpmaLocation vector from sea locations for the picker dialog.
+    std::vector<IpmaLocation> pickerLocations;
+    pickerLocations.reserve(seaLocations.size());
+    for (const auto& sl : seaLocations) {
+        IpmaLocation loc;
+        loc.globalIdLocal = sl.globalIdLocal;
+        loc.local         = sl.local;
+        pickerLocations.push_back(std::move(loc));
+    }
+
+    auto* dlg = new LocationPickerDialog(pickerLocations, language_);
+    const ushort result = TProgram::deskTop->execView(dlg);
+    if (result == cmOK) {
+        const auto loc = dlg->selectedLocation();
+        delete dlg;
+        if (loc.globalIdLocal == 0)
+            return;
+        const auto forecast = IpmaClient::fetchSeaForecast(loc.globalIdLocal, loc.local);
+        if (forecast.days.empty()) {
+            messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+            return;
+        }
+        insertWindow(new SeaWindow(forecast, language_));
+    } else {
+        delete dlg;
+    }
 }

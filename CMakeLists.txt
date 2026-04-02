@@ -76,6 +76,8 @@ add_library(tvweather_core STATIC
     src/LocationPickerDialog.cpp
     src/ForecastWindow.cpp
     src/WarningsWindow.cpp
+    src/UvWindow.cpp
+    src/SeaWindow.cpp
 )
 
 target_compile_features(tvweather_core PUBLIC cxx_std_17)

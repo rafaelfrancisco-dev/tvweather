@@ -39,6 +39,8 @@ private:
     void showLocationPicker();
     void showForecast(int globalIdLocal, const std::string& localName);
     void showWarnings();
+    void showUv();
+    void showSea();
 
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;

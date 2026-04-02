@@ -10,6 +10,8 @@
 
 #include "tvweather/ForecastWindow.h"
 #include "tvweather/Localization.h"
+#include "tvweather/Commands.h"
+#include "ipma/Client.h"
 #include <algorithm>
 #include <cstdio>
 #include <string>
@@ -385,6 +387,24 @@ void ForecastWindow::sizeLimits(TPoint& min, TPoint& max)
     TWindow::sizeLimits(min, max);
     min.x = std::max<short>(min.x, 44);
     min.y = std::max<short>(min.y, 14);
+}
+
+void ForecastWindow::handleEvent(TEvent& event)
+{
+    TWindow::handleEvent(event);
+
+    if (event.what == evCommand && event.message.command == cmRefresh) {
+        forecast_ = IpmaClient::fetchForecast(forecast_.globalIdLocal, forecast_.localName);
+
+        if (auto* list = findChild<ForecastOverviewList>(first(), last))
+            list->setRange(static_cast<short>(forecast_.days.size()));
+
+        if (!forecast_.days.empty())
+            message(this, evBroadcast, cmForecastDayFocused, 0);
+
+        drawView();
+        clearEvent(event);
+    }
 }
 
 void ForecastWindow::updateTitle()

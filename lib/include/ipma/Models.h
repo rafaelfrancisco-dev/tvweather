@@ -38,3 +38,33 @@ struct IpmaWeatherType {
     std::string descPT;
     std::string descEN;
 };
+
+struct IpmaUvEntry {
+    int         globalIdLocal;
+    float       iUv;
+    std::string intervaloHora; // e.g. "13h-15h"
+    std::string data;          // date "YYYY-MM-DD"
+    int         idPeriodo;
+};
+
+struct IpmaSeaLocation {
+    int         globalIdLocal;
+    std::string local;
+};
+
+struct IpmaSeaForecastDay {
+    std::string forecastDate;
+    float       waveHeightMin;
+    float       waveHeightMax;
+    float       wavePeriodMin;
+    float       wavePeriodMax;
+    std::string predWaveDir;
+    float       sstMin;
+    float       sstMax;
+};
+
+struct IpmaSeaForecast {
+    int                             globalIdLocal;
+    std::string                     localName;
+    std::vector<IpmaSeaForecastDay> days;
+};

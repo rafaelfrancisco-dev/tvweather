@@ -160,3 +160,106 @@ std::vector<IpmaWeatherType> IpmaClient::fetchWeatherTypes()
         httpGet(std::string(kBase)
             + "/open-data/weather-type-classe.json"));
 }
+
+std::vector<IpmaUvEntry> IpmaClient::parseUv(const std::string& raw)
+{
+    std::vector<IpmaUvEntry> out;
+    try {
+        const auto j = json::parse(raw);
+        for (const auto& item : j) {
+            IpmaUvEntry e;
+            e.globalIdLocal = item.value("globalIdLocal", 0);
+            e.iUv           = item.value("iUv", 0.0f);
+            e.intervaloHora = item.value("intervaloHora", "");
+            e.data          = item.value("data", "");
+            e.idPeriodo     = item.value("idPeriodo", 0);
+            if (e.globalIdLocal != 0)
+                out.push_back(std::move(e));
+        }
+    } catch (...) {}
+    return out;
+}
+
+std::vector<IpmaSeaLocation> IpmaClient::parseSeaLocations(const std::string& raw)
+{
+    std::vector<IpmaSeaLocation> out;
+    try {
+        const auto j = json::parse(raw);
+        for (const auto& item : j.value("data", json::array())) {
+            IpmaSeaLocation loc;
+            loc.globalIdLocal = item.value("globalIdLocal", 0);
+            loc.local         = item.value("local", "");
+            if (!loc.local.empty())
+                out.push_back(std::move(loc));
+        }
+    } catch (...) {}
+    return out;
+}
+
+std::vector<IpmaSeaForecastDay> IpmaClient::parseSeaForecastDay(
+    const std::string& raw, int globalIdLocal)
+{
+    std::vector<IpmaSeaForecastDay> out;
+    try {
+        const auto j = json::parse(raw);
+        for (const auto& item : j) {
+            if (item.value("globalIdLocal", 0) != globalIdLocal)
+                continue;
+
+            auto safeFloat = [](const json& obj, const char* key) -> float {
+                const auto it = obj.find(key);
+                if (it == obj.end() || it->is_null()) return 0.0f;
+                if (it->is_number()) return static_cast<float>(it->get<double>());
+                if (it->is_string()) {
+                    try { return std::stof(it->get<std::string>()); }
+                    catch (...) { return 0.0f; }
+                }
+                return 0.0f;
+            };
+
+            IpmaSeaForecastDay day;
+            day.forecastDate   = item.value("dataPrev", item.value("forecastDate", ""));
+            day.waveHeightMin  = safeFloat(item, "waveHeightMin");
+            day.waveHeightMax  = safeFloat(item, "waveHeightMax");
+            day.wavePeriodMin  = safeFloat(item, "wavePeriodMin");
+            day.wavePeriodMax  = safeFloat(item, "wavePeriodMax");
+            day.predWaveDir    = item.value("predWaveDir", "");
+            day.sstMin         = safeFloat(item, "sstMin");
+            day.sstMax         = safeFloat(item, "sstMax");
+            out.push_back(std::move(day));
+            break; // one entry per location per day file
+        }
+    } catch (...) {}
+    return out;
+}
+
+std::vector<IpmaUvEntry> IpmaClient::fetchUv()
+{
+    return parseUv(
+        httpGet(std::string(kBase)
+            + "/open-data/forecast/meteorology/uv/uv.json"));
+}
+
+std::vector<IpmaSeaLocation> IpmaClient::fetchSeaLocations()
+{
+    return parseSeaLocations(
+        httpGet(std::string(kBase) + "/open-data/sea-locations.json"));
+}
+
+IpmaSeaForecast IpmaClient::fetchSeaForecast(int globalIdLocal,
+                                              const std::string& localName)
+{
+    IpmaSeaForecast forecast;
+    forecast.globalIdLocal = globalIdLocal;
+    forecast.localName     = localName;
+
+    for (int day = 0; day <= 2; ++day) {
+        const std::string url = std::string(kBase)
+            + "/open-data/forecast/oceanography/daily/hp-daily-sea-forecast-day"
+            + std::to_string(day) + ".json";
+        auto entries = parseSeaForecastDay(httpGet(url), globalIdLocal);
+        for (auto& e : entries)
+            forecast.days.push_back(std::move(e));
+    }
+    return forecast;
+}

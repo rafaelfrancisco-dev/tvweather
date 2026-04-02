@@ -195,3 +195,117 @@ TEST_CASE("parseWeatherTypes: empty on malformed JSON")
 {
     CHECK(IpmaClient::parseWeatherTypes("").empty());
 }
+
+// ── parseUv ───────────────────────────────────────────────────────────────────
+
+static const char* kUvJson = R"([
+    {"globalIdLocal": 1110600, "iUv": 7.2, "intervaloHora": "13h-15h", "data": "2026-04-02", "idPeriodo": 5},
+    {"globalIdLocal": 1131200, "iUv": 6.5, "intervaloHora": "12h-14h", "data": "2026-04-02", "idPeriodo": 4},
+    {"globalIdLocal": 1110600, "iUv": 5.1, "intervaloHora": "13h-15h", "data": "2026-04-03", "idPeriodo": 5}
+])";
+
+TEST_CASE("parseUv: parses UV entries from flat array")
+{
+    const auto entries = IpmaClient::parseUv(kUvJson);
+    REQUIRE(entries.size() == 3);
+
+    CHECK(entries[0].globalIdLocal == 1110600);
+    CHECK(entries[0].iUv           > 7.1f && entries[0].iUv < 7.3f);
+    CHECK(entries[0].intervaloHora == "13h-15h");
+    CHECK(entries[0].data          == "2026-04-02");
+    CHECK(entries[0].idPeriodo     == 5);
+
+    CHECK(entries[1].globalIdLocal == 1131200);
+    CHECK(entries[2].data          == "2026-04-03");
+}
+
+TEST_CASE("parseUv: empty on malformed JSON")
+{
+    CHECK(IpmaClient::parseUv("").empty());
+    CHECK(IpmaClient::parseUv("{bad}").empty());
+}
+
+// ── parseSeaLocations ─────────────────────────────────────────────────────────
+
+static const char* kSeaLocationsJson = R"({
+    "owner": "IPMA",
+    "data": [
+        {"globalIdLocal": 3420100, "local": "Porto"},
+        {"globalIdLocal": 3480200, "local": "Lisboa"},
+        {"globalIdLocal": 3540100, "local": "Faro"}
+    ]
+})";
+
+TEST_CASE("parseSeaLocations: parses coastal locations")
+{
+    const auto locs = IpmaClient::parseSeaLocations(kSeaLocationsJson);
+    REQUIRE(locs.size() == 3);
+
+    CHECK(locs[0].globalIdLocal == 3420100);
+    CHECK(locs[0].local         == "Porto");
+    CHECK(locs[1].local         == "Lisboa");
+    CHECK(locs[2].globalIdLocal == 3540100);
+}
+
+TEST_CASE("parseSeaLocations: empty when 'data' key missing")
+{
+    CHECK(IpmaClient::parseSeaLocations(R"({"owner":"IPMA"})").empty());
+}
+
+TEST_CASE("parseSeaLocations: empty on malformed JSON")
+{
+    CHECK(IpmaClient::parseSeaLocations("").empty());
+}
+
+// ── parseSeaForecastDay ───────────────────────────────────────────────────────
+
+static const char* kSeaDayJson = R"([
+    {
+        "globalIdLocal": 3480200,
+        "dataPrev": "2026-04-02",
+        "waveHeightMin": 0.5,
+        "waveHeightMax": 1.2,
+        "wavePeriodMin": 8.0,
+        "wavePeriodMax": 11.0,
+        "predWaveDir": "NW",
+        "sstMin": 16.2,
+        "sstMax": 17.1
+    },
+    {
+        "globalIdLocal": 3420100,
+        "dataPrev": "2026-04-02",
+        "waveHeightMin": 1.0,
+        "waveHeightMax": 2.5,
+        "wavePeriodMin": 10.0,
+        "wavePeriodMax": 14.0,
+        "predWaveDir": "W",
+        "sstMin": 15.0,
+        "sstMax": 15.8
+    }
+])";
+
+TEST_CASE("parseSeaForecastDay: returns only the entry matching globalIdLocal")
+{
+    const auto days = IpmaClient::parseSeaForecastDay(kSeaDayJson, 3480200);
+    REQUIRE(days.size() == 1);
+
+    CHECK(days[0].forecastDate  == "2026-04-02");
+    CHECK(days[0].waveHeightMin > 0.4f && days[0].waveHeightMin < 0.6f);
+    CHECK(days[0].waveHeightMax > 1.1f && days[0].waveHeightMax < 1.3f);
+    CHECK(days[0].wavePeriodMin > 7.9f && days[0].wavePeriodMin < 8.1f);
+    CHECK(days[0].wavePeriodMax > 10.9f && days[0].wavePeriodMax < 11.1f);
+    CHECK(days[0].predWaveDir   == "NW");
+    CHECK(days[0].sstMin        > 16.1f && days[0].sstMin < 16.3f);
+    CHECK(days[0].sstMax        > 17.0f && days[0].sstMax < 17.2f);
+}
+
+TEST_CASE("parseSeaForecastDay: empty when globalIdLocal not found")
+{
+    const auto days = IpmaClient::parseSeaForecastDay(kSeaDayJson, 9999999);
+    CHECK(days.empty());
+}
+
+TEST_CASE("parseSeaForecastDay: empty on malformed JSON")
+{
+    CHECK(IpmaClient::parseSeaForecastDay("", 3480200).empty());
+}

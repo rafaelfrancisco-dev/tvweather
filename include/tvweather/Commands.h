@@ -4,3 +4,6 @@
 constexpr int cmOpenLocationPicker = 100; // Weather > Pick Location  (F3)
 constexpr int cmShowWarnings       = 101; // Weather > Active Warnings (F4)
 constexpr int cmOpenOptions        = 102; // Options > Preferences
+constexpr int cmShowUv             = 103; // Weather > UV Index        (F5)
+constexpr int cmShowSea            = 104; // Weather > Sea Conditions  (F6)
+constexpr int cmRefresh            = 105; // Window refresh            (F2)
