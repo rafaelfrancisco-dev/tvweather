@@ -31,8 +31,9 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 - **Sea conditions** — 3-day wave height, wave period, wave direction, and sea surface temperature for 12 coastal locations
 - **Refresh** — re-fetch data for the active window at any time with F2
 - **Error notifications** — message box shown when API calls fail or return empty data
-- **Options dialog** — dedicated settings window for app preferences
+- **Options dialog** — dedicated settings window for language preferences
 - **Language switching** — English/Portuguese UI toggle persisted across restarts
+- **Palette picker** — TVision color editor available from the Options menu, with palette changes persisted across restarts when the terminal color mode matches
 - **Clear location** — remove the active location to force a new pick later
 - Multiple forecast/UV/sea windows can be open simultaneously (tiled or overlapping)
 
@@ -111,7 +112,7 @@ In forecast and sea windows, the day list on the left is a standard Turbo Vision
 2. The selected location becomes the active location and is shown in the status bar.
 3. `Forecast...` reuses that active location directly.
 4. `UV Index...` reuses that active location directly.
-5. `Sea Conditions...` reuses it when the selected `globalIdLocal` exists in the sea dataset; otherwise it asks for a coastal location.
+5. `Sea Conditions...` reuses the active location and automatically picks the nearest available coastal sea location from the IPMA sea dataset.
 6. `Clear Location` removes the active location from memory and from the saved config so the next location-dependent action can ask again.
 
 **Weather menu items:**
@@ -121,14 +122,15 @@ In forecast and sea windows, the day list on the left is a standard Turbo Vision
 | Forecast… | F3 | Opens the forecast for the active location; if none is selected, opens the location picker first |
 | Active Warnings | F4 | Fetches and displays current non-green meteorological warnings |
 | UV Index… | F5 | Uses the active location; if none is selected, opens the location picker first |
-| Sea Conditions… | F6 | Uses the active location when it has sea data; otherwise opens a coastal location picker |
+| Sea Conditions… | F6 | Uses the active location and automatically matches it to the nearest available coastal sea location |
 | Exit | Ctrl-Q | Quit the application |
 
 **Options menu items:**
 
 | Item | Description |
 |---|---|
-| Preferences... | Opens a dedicated options dialog; currently used to change the UI language |
+| Preferences... | Opens the language dialog |
+| Colors... | Opens TVision's built-in palette editor and saves the resulting app palette |
 
 **Location picker search:** type any part of a location name to filter the list in real time. The search is case-insensitive. Press `Tab` or `Down` to move focus to the filtered list.
 
@@ -146,6 +148,8 @@ Current persisted fields:
 - `language`
 - `selectedLocation.globalIdLocal`
 - `selectedLocation.local`
+- `palette.mode`
+- `palette.entries[]`
 
 Example:
 
@@ -155,11 +159,17 @@ Example:
   "selectedLocation": {
     "globalIdLocal": 1110600,
     "local": "Lisboa"
+  },
+  "palette": {
+    "mode": 0,
+    "entries": [113, 112, 120, 116]
   }
 }
 ```
 
 If the saved location is missing from the latest IPMA location list, tvweather drops it and falls back to the picker flow.
+
+Palette persistence is mode-specific. tvweather restores a saved palette only when the saved `palette.mode` matches the current TVision app palette mode for the terminal; otherwise it keeps TVision's default palette for that session.
 
 > **Note on green warnings:** The IPMA API publishes baseline "green" entries for every location and hazard type regardless of risk. tvweather filters these out and only shows yellow, orange and red warnings.
 
@@ -241,7 +251,7 @@ Tests include:
 
 ## Turbo Vision Notes
 
-For settings UI, tvweather uses the standard Turbo Vision pattern of a modal `TDialog` containing controls such as `TRadioButtons` and `TButton`, instead of putting individual toggles directly in the menu. This keeps the current language selector idiomatic and leaves room to add more settings to the same options window later.
+For language settings UI, tvweather uses the standard Turbo Vision pattern of a modal `TDialog` containing controls such as `TRadioButtons` and `TButton`. Palette editing is intentionally separate and uses TVision's built-in `TColorDialog` from the `Colors...` menu item so the app follows the framework's own color-editing workflow.
 
 The location picker search uses `TInputLine` at the top of the dialog. On each key event, `handleEvent` compares the input value to the previous filter and rebuilds the `TStringCollection` passed to `TListBox::newList()` when it changes. This avoids polling and keeps the list in sync with typing.
 

@@ -47,6 +47,36 @@ AppSettings parseSettings(const Json& json)
         }
     }
 
+    if (json.contains("palette") && json["palette"].is_object()) {
+        const auto& palette = json["palette"];
+        if (palette.contains("mode")
+            && palette["mode"].is_number_integer()
+            && palette.contains("entries")
+            && palette["entries"].is_array()) {
+            SavedPalette savedPalette;
+            savedPalette.mode = palette["mode"].get<int>();
+
+            bool validEntries = true;
+            for (const auto& entry : palette["entries"]) {
+                if (!entry.is_number_integer()) {
+                    validEntries = false;
+                    break;
+                }
+
+                const int value = entry.get<int>();
+                if (value < 0 || value > 255) {
+                    validEntries = false;
+                    break;
+                }
+
+                savedPalette.entries.push_back(value);
+            }
+
+            if (validEntries && !savedPalette.entries.empty())
+                settings.palette = std::move(savedPalette);
+        }
+    }
+
     return settings;
 }
 
@@ -59,6 +89,13 @@ Json serializeSettings(const AppSettings& settings)
         json["selectedLocation"] = {
             {"globalIdLocal", settings.selectedLocation->globalIdLocal},
             {"local", settings.selectedLocation->local},
+        };
+    }
+
+    if (settings.palette.has_value()) {
+        json["palette"] = {
+            {"mode", settings.palette->mode},
+            {"entries", settings.palette->entries},
         };
     }
 

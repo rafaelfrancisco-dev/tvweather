@@ -15,6 +15,7 @@ struct UiStrings {
     const char* exitApp;
     const char* optionsMenu;
     const char* preferences;
+    const char* colors;
     const char* statusExit;
     const char* optionsDialogTitle;
     const char* statusClearLocation;
@@ -56,6 +57,9 @@ struct UiStrings {
     const char* seaWavePeriod;
     const char* seaWaveDir;
     const char* seaSst;
+    const char* seaClosestNotice;
+    const char* seaClosestLocationLabel;
+    const char* seaClosestDistanceLabel;
 };
 
 const UiStrings& uiStrings(Language language) noexcept;

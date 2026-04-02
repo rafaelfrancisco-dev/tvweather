@@ -1,4 +1,8 @@
 #define Uses_MsgBox
+#define Uses_TColorDialog
+#define Uses_TColorGroup
+#define Uses_TColorItem
+#define Uses_TScreen
 #include "tvweather/TvWeatherApp.h"
 #include "tvweather/Commands.h"
 #include "tvweather/LocationPickerDialog.h"
@@ -10,8 +14,13 @@
 #include "tvweather/UvWindow.h"
 #include "tvweather/SeaWindow.h"
 
+#include <tvision/colorsel.h>
+
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <cstdio>
+#include <limits>
 #include <optional>
 
 namespace {
@@ -91,6 +100,157 @@ tvweather::SavedLocation toSavedLocation(const IpmaLocation& location)
     return {location.globalIdLocal, location.local};
 }
 
+tvweather::SavedPalette currentPaletteSettings()
+{
+    const TPalette& palette = TProgram::application->getPalette();
+
+    tvweather::SavedPalette savedPalette;
+    savedPalette.mode = TProgram::appPalette;
+
+    const int size = palette[0];
+    savedPalette.entries.reserve(size);
+    for (int index = 1; index <= size; ++index)
+        savedPalette.entries.push_back(palette[index]);
+
+    return savedPalette;
+}
+
+TColorGroup& paletteGroups()
+{
+    static TColorGroup& groups =
+        *new TColorGroup("Desktop") +
+            *new TColorItem("Color", 1) +
+
+        *new TColorGroup("Menus") +
+            *new TColorItem("Normal", 2) +
+            *new TColorItem("Disabled", 3) +
+            *new TColorItem("Shortcut", 4) +
+            *new TColorItem("Selected", 5) +
+            *new TColorItem("Selected disabled", 6) +
+            *new TColorItem("Shortcut selected", 7) +
+
+        *new TColorGroup("Blue windows") +
+            *new TColorItem("Frame passive", 8) +
+            *new TColorItem("Frame active", 9) +
+            *new TColorItem("Frame icon", 10) +
+            *new TColorItem("Scroll bar page", 11) +
+            *new TColorItem("Scroll bar controls", 12) +
+            *new TColorItem("Scroller text", 13) +
+            *new TColorItem("Scroller selected", 14) +
+
+        *new TColorGroup("Cyan windows") +
+            *new TColorItem("Frame passive", 16) +
+            *new TColorItem("Frame active", 17) +
+            *new TColorItem("Frame icon", 18) +
+            *new TColorItem("Scroll bar page", 19) +
+            *new TColorItem("Scroll bar controls", 20) +
+            *new TColorItem("Scroller text", 21) +
+            *new TColorItem("Scroller selected", 22) +
+
+        *new TColorGroup("Gray windows") +
+            *new TColorItem("Frame passive", 24) +
+            *new TColorItem("Frame active", 25) +
+            *new TColorItem("Frame icon", 26) +
+            *new TColorItem("Scroll bar page", 27) +
+            *new TColorItem("Scroll bar controls", 28) +
+            *new TColorItem("Scroller text", 29) +
+            *new TColorItem("Scroller selected", 30) +
+
+        *new TColorGroup("Gray dialogs") +
+            *new TColorItem("Frame/background", 33) +
+            *new TColorItem("Frame icons", 34) +
+            *new TColorItem("Scroll bar page", 35) +
+            *new TColorItem("Scroll bar icons", 36) +
+            *new TColorItem("Static text", 37) +
+            *new TColorItem("Label normal", 38) +
+            *new TColorItem("Label selected", 39) +
+            *new TColorItem("Label shortcut", 40) +
+            *new TColorItem("Button normal", 41) +
+            *new TColorItem("Button default", 42) +
+            *new TColorItem("Button selected", 43) +
+            *new TColorItem("Button disabled", 44) +
+            *new TColorItem("Button shortcut", 45) +
+            *new TColorItem("Button shadow", 46) +
+            *new TColorItem("Cluster normal", 47) +
+            *new TColorItem("Cluster selected", 48) +
+            *new TColorItem("Cluster shortcut", 49) +
+            *new TColorItem("Input normal", 50) +
+            *new TColorItem("Input selected", 51) +
+            *new TColorItem("Input arrow", 52) +
+            *new TColorItem("History button", 53) +
+            *new TColorItem("History sides", 54) +
+            *new TColorItem("History bar page", 55) +
+            *new TColorItem("History bar icons", 56) +
+            *new TColorItem("List normal", 57) +
+            *new TColorItem("List focused", 58) +
+            *new TColorItem("List selected", 59) +
+            *new TColorItem("List divider", 60) +
+            *new TColorItem("Information pane", 61) +
+
+        *new TColorGroup("Blue dialogs") +
+            *new TColorItem("Frame/background", 65) +
+            *new TColorItem("Frame icons", 66) +
+            *new TColorItem("Scroll bar page", 67) +
+            *new TColorItem("Scroll bar icons", 68) +
+            *new TColorItem("Static text", 69) +
+            *new TColorItem("Label normal", 70) +
+            *new TColorItem("Label selected", 71) +
+            *new TColorItem("Label shortcut", 72) +
+            *new TColorItem("Button normal", 73) +
+            *new TColorItem("Button default", 74) +
+            *new TColorItem("Button selected", 75) +
+            *new TColorItem("Button disabled", 76) +
+            *new TColorItem("Button shortcut", 77) +
+            *new TColorItem("Button shadow", 78) +
+            *new TColorItem("Cluster normal", 79) +
+            *new TColorItem("Cluster selected", 80) +
+            *new TColorItem("Cluster shortcut", 81) +
+            *new TColorItem("Input normal", 82) +
+            *new TColorItem("Input selected", 83) +
+            *new TColorItem("Input arrow", 84) +
+            *new TColorItem("History button", 85) +
+            *new TColorItem("History sides", 86) +
+            *new TColorItem("History bar page", 87) +
+            *new TColorItem("History bar icons", 88) +
+            *new TColorItem("List normal", 89) +
+            *new TColorItem("List focused", 90) +
+            *new TColorItem("List selected", 91) +
+            *new TColorItem("List divider", 92) +
+            *new TColorItem("Information pane", 93) +
+
+        *new TColorGroup("Cyan dialogs") +
+            *new TColorItem("Frame/background", 97) +
+            *new TColorItem("Frame icons", 98) +
+            *new TColorItem("Scroll bar page", 99) +
+            *new TColorItem("Scroll bar icons", 100) +
+            *new TColorItem("Static text", 101) +
+            *new TColorItem("Label normal", 102) +
+            *new TColorItem("Label selected", 103) +
+            *new TColorItem("Label shortcut", 104) +
+            *new TColorItem("Button normal", 105) +
+            *new TColorItem("Button default", 106) +
+            *new TColorItem("Button selected", 107) +
+            *new TColorItem("Button disabled", 108) +
+            *new TColorItem("Button shortcut", 109) +
+            *new TColorItem("Button shadow", 110) +
+            *new TColorItem("Cluster normal", 111) +
+            *new TColorItem("Cluster selected", 112) +
+            *new TColorItem("Cluster shortcut", 113) +
+            *new TColorItem("Input normal", 114) +
+            *new TColorItem("Input selected", 115) +
+            *new TColorItem("Input arrow", 116) +
+            *new TColorItem("History button", 117) +
+            *new TColorItem("History sides", 118) +
+            *new TColorItem("History bar page", 119) +
+            *new TColorItem("History bar icons", 120) +
+            *new TColorItem("List normal", 121) +
+            *new TColorItem("List focused", 122) +
+            *new TColorItem("List selected", 123) +
+            *new TColorItem("List divider", 124) +
+            *new TColorItem("Information pane", 125);
+    return groups;
+}
+
 const IpmaSeaLocation* findSeaLocation(const std::vector<IpmaSeaLocation>& locations,
                                        int                                 globalIdLocal)
 {
@@ -99,6 +259,103 @@ const IpmaSeaLocation* findSeaLocation(const std::vector<IpmaSeaLocation>& locat
                                      return location.globalIdLocal == globalIdLocal;
                                  });
     return it != locations.end() ? &*it : nullptr;
+}
+
+const IpmaLocation* findLocation(const std::vector<IpmaLocation>& locations,
+                                 int                             globalIdLocal)
+{
+    const auto it = std::find_if(locations.begin(), locations.end(),
+                                 [globalIdLocal](const IpmaLocation& location) {
+                                     return location.globalIdLocal == globalIdLocal;
+                                 });
+    return it != locations.end() ? &*it : nullptr;
+}
+
+double toRadians(double degrees)
+{
+    return degrees * 3.14159265358979323846 / 180.0;
+}
+
+double distanceKm(double latitudeA, double longitudeA,
+                  double latitudeB, double longitudeB)
+{
+    constexpr double earthRadiusKm = 6371.0;
+
+    const double latA = toRadians(latitudeA);
+    const double lonA = toRadians(longitudeA);
+    const double latB = toRadians(latitudeB);
+    const double lonB = toRadians(longitudeB);
+
+    const double deltaLat = latB - latA;
+    const double deltaLon = lonB - lonA;
+    const double sinLat = std::sin(deltaLat / 2.0);
+    const double sinLon = std::sin(deltaLon / 2.0);
+    const double a = sinLat * sinLat
+        + std::cos(latA) * std::cos(latB) * sinLon * sinLon;
+    const double c = 2.0 * std::atan2(std::sqrt(a), std::sqrt(1.0 - a));
+
+    return earthRadiusKm * c;
+}
+
+const IpmaSeaLocation* findNearestSeaLocation(const IpmaLocation&                    selectedLocation,
+                                              const std::vector<IpmaSeaLocation>& seaLocations)
+{
+    if (!selectedLocation.latitude.has_value() || !selectedLocation.longitude.has_value())
+        return nullptr;
+
+    const IpmaSeaLocation* nearest = findSeaLocation(seaLocations, selectedLocation.globalIdLocal);
+    double bestDistance = nearest != nullptr ? 0.0 : std::numeric_limits<double>::max();
+
+    for (const auto& seaLocation : seaLocations) {
+        if (!seaLocation.latitude.has_value() || !seaLocation.longitude.has_value())
+            continue;
+
+        const double distance = distanceKm(*selectedLocation.latitude,
+                                           *selectedLocation.longitude,
+                                           *seaLocation.latitude,
+                                           *seaLocation.longitude);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            nearest = &seaLocation;
+        }
+    }
+
+    return nearest;
+}
+
+double distanceToSeaLocationKm(const IpmaLocation& selectedLocation,
+                               const IpmaSeaLocation& seaLocation)
+{
+    if (!selectedLocation.latitude.has_value() || !selectedLocation.longitude.has_value() ||
+        !seaLocation.latitude.has_value() || !seaLocation.longitude.has_value())
+        return 0.0;
+
+    return distanceKm(*selectedLocation.latitude,
+                      *selectedLocation.longitude,
+                      *seaLocation.latitude,
+                      *seaLocation.longitude);
+}
+
+std::string buildSeaClosestLocationMessage(tvweather::Language language,
+                                           const std::string& selectedLocationName,
+                                           const std::string& seaLocationName,
+                                           double             distanceKmValue)
+{
+    const auto& strings = tvweather::uiStrings(language);
+    char distanceBuffer[32];
+    std::snprintf(distanceBuffer, sizeof(distanceBuffer), "%.1f km", distanceKmValue);
+
+    return std::string(strings.seaClosestNotice)
+        + "\n\n"
+        + strings.seaClosestLocationLabel
+        + ": "
+        + seaLocationName
+        + "\n"
+        + strings.seaClosestDistanceLabel
+        + " ("
+        + selectedLocationName
+        + "): "
+        + distanceBuffer;
 }
 
 TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
@@ -118,7 +375,8 @@ TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
             newLine() +
             *new TMenuItem(strings.exitApp, cmQuit, kbCtrlQ, hcNoContext, "Ctrl-Q") +
         *new TSubMenu(strings.optionsMenu, kbAltO) +
-            *new TMenuItem(strings.preferences, cmOpenOptions, kbNoKey, hcNoContext));
+            *new TMenuItem(strings.preferences, cmOpenOptions, kbNoKey, hcNoContext) +
+            *new TMenuItem(strings.colors, cmOpenColors, kbNoKey, hcNoContext));
 }
 
 TStatusLine* buildStatusLine(TRect                                     bounds,
@@ -159,7 +417,9 @@ TvWeatherApp::TvWeatherApp() :
 {
     const auto settings = tvweather::loadSettings();
     language_ = settings.language;
+    palette_ = settings.palette;
     selectedLocation_ = settings.selectedLocation;
+    applySavedPalette(palette_);
     rebuildStatusLine();
     rebuildMenuBar();
     updateLocationCommandState();
@@ -216,6 +476,10 @@ void TvWeatherApp::handleEvent(TEvent& event)
             showOptions();
             clearEvent(event);
             break;
+        case cmOpenColors:
+            showColors();
+            clearEvent(event);
+            break;
         case cmClearLocation:
             clearSelectedLocation();
             clearEvent(event);
@@ -234,6 +498,24 @@ TMenuBar* TvWeatherApp::initMenuBar(TRect bounds)
 TStatusLine* TvWeatherApp::initStatusLine(TRect bounds)
 {
     return buildStatusLine(bounds, tvweather::Language::English, std::nullopt);
+}
+
+void TvWeatherApp::applySavedPalette(const std::optional<tvweather::SavedPalette>& palette)
+{
+    if (!palette.has_value())
+        return;
+    if (palette->mode != TProgram::appPalette)
+        return;
+
+    TPalette& current = getPalette();
+    const int expectedSize = current[0];
+    if (static_cast<int>(palette->entries.size()) != expectedSize)
+        return;
+
+    for (int index = 0; index < expectedSize; ++index)
+        current[index + 1] = static_cast<uchar>(palette->entries[index]);
+
+    setScreenMode(TScreen::screenMode);
 }
 
 void TvWeatherApp::refreshLanguage(tvweather::Language language)
@@ -278,6 +560,7 @@ void TvWeatherApp::saveSettings() const
 {
     tvweather::AppSettings settings;
     settings.language = language_;
+    settings.palette = palette_;
     settings.selectedLocation = selectedLocation_;
     tvweather::saveSettings(settings);
 }
@@ -360,6 +643,25 @@ void TvWeatherApp::showOptions()
     }
 }
 
+void TvWeatherApp::showColors()
+{
+    TView* view = validView(new TColorDialog(nullptr, &paletteGroups()));
+    if (view == nullptr)
+        return;
+
+    auto* dialog = static_cast<TColorDialog*>(view);
+    dialog->setData(&getPalette());
+
+    if (TProgram::deskTop->execView(dialog) == cmOK) {
+        getPalette() = *dialog->pal;
+        setScreenMode(TScreen::screenMode);
+        palette_ = currentPaletteSettings();
+        saveSettings();
+    }
+
+    destroy(dialog);
+}
+
 void TvWeatherApp::refreshOpenWindows()
 {
     TProgram::deskTop->forEach(refreshWindowLanguage, &language_);
@@ -411,49 +713,40 @@ void TvWeatherApp::showUv()
 
 void TvWeatherApp::showSea()
 {
+    if (!ensureSelectedLocation())
+        return;
+
     const auto seaLocations = IpmaClient::fetchSeaLocations();
     if (seaLocations.empty()) {
         messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
         return;
     }
 
-    // Build IpmaLocation vector from sea locations for the picker dialog.
-    std::vector<IpmaLocation> pickerLocations;
-    pickerLocations.reserve(seaLocations.size());
-    for (const auto& sl : seaLocations) {
-        IpmaLocation loc;
-        loc.globalIdLocal = sl.globalIdLocal;
-        loc.local         = sl.local;
-        pickerLocations.push_back(std::move(loc));
-    }
-
-    tvweather::SavedLocation location;
-    bool hasLocation = false;
-
-    if (selectedLocation_.has_value()) {
-        if (const auto* seaLocation = findSeaLocation(seaLocations,
-                                                      selectedLocation_->globalIdLocal)) {
-            location = {seaLocation->globalIdLocal, seaLocation->local};
-            hasLocation = true;
-        }
-    }
-
-    if (!hasLocation) {
-        if (const auto selected = pickLocation(pickerLocations)) {
-            location = *selected;
-            selectLocation(location);
-            hasLocation = true;
-        }
-    }
-
-    if (!hasLocation)
+    const auto* selectedLocation = findLocation(locations_, selectedLocation_->globalIdLocal);
+    if (selectedLocation == nullptr) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
         return;
+    }
 
-    const auto forecast = IpmaClient::fetchSeaForecast(location.globalIdLocal, location.local);
+    const auto* seaLocation = findNearestSeaLocation(*selectedLocation, seaLocations);
+    if (seaLocation == nullptr) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
+    const double seaDistanceKm = distanceToSeaLocationKm(*selectedLocation, *seaLocation);
+
+    const auto forecast = IpmaClient::fetchSeaForecast(seaLocation->globalIdLocal,
+                                                       seaLocation->local);
     if (forecast.days.empty()) {
         messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
         return;
     }
 
+    messageBox(buildSeaClosestLocationMessage(language_,
+                                              selectedLocation->local,
+                                              seaLocation->local,
+                                              seaDistanceKm).c_str(),
+               mfInformation | mfOKButton);
     insertWindow(new SeaWindow(forecast, language_));
 }

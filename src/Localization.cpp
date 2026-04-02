@@ -12,6 +12,7 @@ const UiStrings kEnglishStrings {
     "E~x~it",
     "~O~ptions",
     "~P~references...",
+    "~C~olors...",
     "~Ctrl-Q~ Exit",
     "Options",
     "~F8~ Clear Location",
@@ -52,7 +53,10 @@ const UiStrings kEnglishStrings {
     "Wave",
     "Period",
     "Dir",
-    "SST"
+    "SST",
+    "Sea conditions are shown for the closest coastal location.",
+    "Location",
+    "Distance from selected location"
 };
 
 const UiStrings kPortugueseStrings {
@@ -63,6 +67,7 @@ const UiStrings kPortugueseStrings {
     "Sai~r~",
     "~O~pções",
     "~P~referências...",
+    "~C~ores...",
     "~Ctrl-Q~ Sair",
     "Opções",
     "~F8~ Limpar Localidade",
@@ -103,7 +108,10 @@ const UiStrings kPortugueseStrings {
     "Ondas",
     "Período",
     "Dir",
-    "TSM"
+    "TSM",
+    "As condições do mar são mostradas para a localidade costeira mais próxima.",
+    "Localidade",
+    "Distância desde a localidade seleccionada"
 };
 
 } // namespace

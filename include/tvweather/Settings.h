@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace tvweather {
 
@@ -12,9 +13,15 @@ struct SavedLocation {
     std::string local;
 };
 
+struct SavedPalette {
+    int              mode {0};
+    std::vector<int> entries;
+};
+
 struct AppSettings {
     Language                     language {Language::English};
     std::optional<SavedLocation> selectedLocation;
+    std::optional<SavedPalette>  palette;
 };
 
 std::filesystem::path defaultSettingsPath();

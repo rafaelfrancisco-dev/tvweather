@@ -43,10 +43,14 @@ TEST_CASE("uiStrings returns localized chrome labels")
           == "~O~pções");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).optionsDialogTitle)
           == "Opções");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).colors)
+          == "~C~olors...");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).statusNoLocation)
           == "Localidade: nenhuma seleccionada");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastDetails)
           == "Details");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).seaClosestNotice)
+          == "Sea conditions are shown for the closest coastal location.");
 }
 
 TEST_CASE("rainRiskLabel maps precipitation percentages into localized severities")
@@ -122,6 +126,31 @@ TEST_CASE("loadSettingsFromFile reads language and selected location")
     fs::remove_all(tempDir);
 }
 
+TEST_CASE("loadSettingsFromFile reads persisted palette data")
+{
+    const fs::path tempDir = fs::temp_directory_path() / "tvweather-support-settings-palette";
+    fs::create_directories(tempDir);
+
+    const fs::path configPath = tempDir / "config.json";
+    {
+        std::ofstream output(configPath);
+        output << "{\n"
+                  "  \"language\": \"en\",\n"
+                  "  \"palette\": {\n"
+                  "    \"mode\": 1,\n"
+                  "    \"entries\": [112, 113, 114]\n"
+                  "  }\n"
+                  "}\n";
+    }
+
+    const auto settings = tvweather::loadSettingsFromFile(configPath);
+    REQUIRE(settings.palette.has_value());
+    CHECK(settings.palette->mode == 1);
+    CHECK(settings.palette->entries == std::vector<int>({112, 113, 114}));
+
+    fs::remove_all(tempDir);
+}
+
 TEST_CASE("loadSettingsFromFile ignores invalid selected location values")
 {
     const fs::path tempDir = fs::temp_directory_path() / "tvweather-support-settings-invalid";
@@ -142,6 +171,28 @@ TEST_CASE("loadSettingsFromFile ignores invalid selected location values")
     const auto settings = tvweather::loadSettingsFromFile(configPath);
     CHECK(settings.language == tvweather::Language::English);
     CHECK(!settings.selectedLocation.has_value());
+
+    fs::remove_all(tempDir);
+}
+
+TEST_CASE("loadSettingsFromFile ignores invalid palette values")
+{
+    const fs::path tempDir = fs::temp_directory_path() / "tvweather-support-settings-bad-palette";
+    fs::create_directories(tempDir);
+
+    const fs::path configPath = tempDir / "config.json";
+    {
+        std::ofstream output(configPath);
+        output << "{\n"
+                  "  \"palette\": {\n"
+                  "    \"mode\": 0,\n"
+                  "    \"entries\": [10, -1, 300]\n"
+                  "  }\n"
+                  "}\n";
+    }
+
+    const auto settings = tvweather::loadSettingsFromFile(configPath);
+    CHECK(!settings.palette.has_value());
 
     fs::remove_all(tempDir);
 }
@@ -188,6 +239,29 @@ TEST_CASE("saveSettingsToFile writes language and selected location")
     REQUIRE(loaded.selectedLocation.has_value());
     CHECK(loaded.selectedLocation->globalIdLocal == 1110600);
     CHECK(loaded.selectedLocation->local == "Lisboa");
+
+    fs::remove_all(tempDir);
+}
+
+TEST_CASE("saveSettingsToFile round-trips palette data")
+{
+    const fs::path tempDir = fs::temp_directory_path() / "tvweather-support-save-palette";
+    const fs::path configPath = tempDir / "config.json";
+
+    tvweather::AppSettings settings;
+    settings.language = tvweather::Language::Portuguese;
+    settings.selectedLocation = tvweather::SavedLocation {1110600, "Lisboa"};
+    settings.palette = tvweather::SavedPalette {0, {10, 20, 30, 40}};
+
+    REQUIRE(tvweather::saveSettingsToFile(configPath, settings));
+
+    const auto loaded = tvweather::loadSettingsFromFile(configPath);
+    CHECK(loaded.language == tvweather::Language::Portuguese);
+    REQUIRE(loaded.selectedLocation.has_value());
+    CHECK(loaded.selectedLocation->local == "Lisboa");
+    REQUIRE(loaded.palette.has_value());
+    CHECK(loaded.palette->mode == 0);
+    CHECK(loaded.palette->entries == std::vector<int>({10, 20, 30, 40}));
 
     fs::remove_all(tempDir);
 }

@@ -8,3 +8,4 @@ constexpr int cmShowUv             = 103; // Weather > UV Index        (F5)
 constexpr int cmShowSea            = 104; // Weather > Sea Conditions  (F6)
 constexpr int cmRefresh            = 105; // Window refresh            (F2)
 constexpr int cmClearLocation      = 106; // Weather > Clear Location  (F8)
+constexpr int cmOpenColors         = 107; // Options > Colors

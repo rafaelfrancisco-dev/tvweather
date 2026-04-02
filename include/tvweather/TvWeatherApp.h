@@ -33,6 +33,7 @@ private:
     static TMenuBar*    initMenuBar(TRect bounds);
     static TStatusLine* initStatusLine(TRect bounds);
 
+    void applySavedPalette(const std::optional<tvweather::SavedPalette>& palette);
     void clearSelectedLocation();
     bool ensureSelectedLocation();
     std::optional<tvweather::SavedLocation> pickLocation(const std::vector<IpmaLocation>& locations);
@@ -42,6 +43,7 @@ private:
     void refreshOpenWindows();
     void saveSettings() const;
     void selectLocation(const tvweather::SavedLocation& location);
+    void showColors();
     void showOptions();
     void showForecast();
     void showLocationPicker();
@@ -54,5 +56,6 @@ private:
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
     tvweather::Language          language_ {tvweather::Language::English};
+    std::optional<tvweather::SavedPalette>  palette_;
     std::optional<tvweather::SavedLocation> selectedLocation_;
 };
