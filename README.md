@@ -231,8 +231,9 @@ Tests include:
 - Warning display fields (`awarenessTypeName`, `idAreaAviso`)
 - Weather type lookup
 - UV index entry parsing (location, UV value, time interval, date)
-- Sea location parsing
-- Sea forecast day parsing (wave height, period, direction, SST) with location filtering
+- Sea location parsing from the current top-level array payload
+- Sea forecast day parsing from the current wrapped payload (`forecastDate` + `data`) with `waveHighMin` / `waveHighMax`
+- Backward-compatible sea parsing for older wrapped location payloads and legacy sea day arrays
 - Language selection/persistence (`en` / `pt`)
 - Selected location load/save/clear behavior
 - Localized weather description lookup

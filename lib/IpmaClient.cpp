@@ -185,7 +185,16 @@ std::vector<IpmaSeaLocation> IpmaClient::parseSeaLocations(const std::string& ra
     std::vector<IpmaSeaLocation> out;
     try {
         const auto j = json::parse(raw);
-        for (const auto& item : j.value("data", json::array())) {
+        const json* items = nullptr;
+        if (j.is_array())
+            items = &j;
+        else if (const auto it = j.find("data"); it != j.end() && it->is_array())
+            items = &(*it);
+
+        if (!items)
+            return out;
+
+        for (const auto& item : *items) {
             IpmaSeaLocation loc;
             loc.globalIdLocal = item.value("globalIdLocal", 0);
             loc.local         = item.value("local", "");
@@ -202,30 +211,51 @@ std::vector<IpmaSeaForecastDay> IpmaClient::parseSeaForecastDay(
     std::vector<IpmaSeaForecastDay> out;
     try {
         const auto j = json::parse(raw);
-        for (const auto& item : j) {
+        const json* items = nullptr;
+        std::string forecastDate;
+
+        if (j.is_array()) {
+            items = &j;
+        } else if (j.is_object()) {
+            forecastDate = j.value("forecastDate", "");
+            if (const auto it = j.find("data"); it != j.end() && it->is_array())
+                items = &(*it);
+        }
+
+        if (!items)
+            return out;
+
+        auto safeFloat = [](const json& obj,
+                            std::initializer_list<const char*> keys) -> float {
+            for (const char* key : keys) {
+                const auto it = obj.find(key);
+                if (it == obj.end() || it->is_null())
+                    continue;
+                if (it->is_number())
+                    return static_cast<float>(it->get<double>());
+                if (it->is_string()) {
+                    try {
+                        return std::stof(it->get<std::string>());
+                    } catch (...) {}
+                }
+            }
+            return 0.0f;
+        };
+
+        for (const auto& item : *items) {
             if (item.value("globalIdLocal", 0) != globalIdLocal)
                 continue;
 
-            auto safeFloat = [](const json& obj, const char* key) -> float {
-                const auto it = obj.find(key);
-                if (it == obj.end() || it->is_null()) return 0.0f;
-                if (it->is_number()) return static_cast<float>(it->get<double>());
-                if (it->is_string()) {
-                    try { return std::stof(it->get<std::string>()); }
-                    catch (...) { return 0.0f; }
-                }
-                return 0.0f;
-            };
-
             IpmaSeaForecastDay day;
-            day.forecastDate   = item.value("dataPrev", item.value("forecastDate", ""));
-            day.waveHeightMin  = safeFloat(item, "waveHeightMin");
-            day.waveHeightMax  = safeFloat(item, "waveHeightMax");
-            day.wavePeriodMin  = safeFloat(item, "wavePeriodMin");
-            day.wavePeriodMax  = safeFloat(item, "wavePeriodMax");
+            day.forecastDate   = item.value("dataPrev",
+                                  item.value("forecastDate", forecastDate));
+            day.waveHeightMin  = safeFloat(item, {"waveHeightMin", "waveHighMin"});
+            day.waveHeightMax  = safeFloat(item, {"waveHeightMax", "waveHighMax"});
+            day.wavePeriodMin  = safeFloat(item, {"wavePeriodMin"});
+            day.wavePeriodMax  = safeFloat(item, {"wavePeriodMax"});
             day.predWaveDir    = item.value("predWaveDir", "");
-            day.sstMin         = safeFloat(item, "sstMin");
-            day.sstMax         = safeFloat(item, "sstMax");
+            day.sstMin         = safeFloat(item, {"sstMin"});
+            day.sstMax         = safeFloat(item, {"sstMax"});
             out.push_back(std::move(day));
             break; // one entry per location per day file
         }

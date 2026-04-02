@@ -227,7 +227,13 @@ TEST_CASE("parseUv: empty on malformed JSON")
 
 // ── parseSeaLocations ─────────────────────────────────────────────────────────
 
-static const char* kSeaLocationsJson = R"({
+static const char* kSeaLocationsJson = R"([
+    {"globalIdLocal": 1130826, "local": "Porto, costa"},
+    {"globalIdLocal": 1111026, "local": "Lisboa, costa"},
+    {"globalIdLocal": 1080526, "local": "Faro, costa"}
+])";
+
+static const char* kSeaLocationsWrappedJson = R"({
     "owner": "IPMA",
     "data": [
         {"globalIdLocal": 3420100, "local": "Porto"},
@@ -241,10 +247,19 @@ TEST_CASE("parseSeaLocations: parses coastal locations")
     const auto locs = IpmaClient::parseSeaLocations(kSeaLocationsJson);
     REQUIRE(locs.size() == 3);
 
+    CHECK(locs[0].globalIdLocal == 1130826);
+    CHECK(locs[0].local         == "Porto, costa");
+    CHECK(locs[1].local         == "Lisboa, costa");
+    CHECK(locs[2].globalIdLocal == 1080526);
+}
+
+TEST_CASE("parseSeaLocations: supports wrapped legacy payload")
+{
+    const auto locs = IpmaClient::parseSeaLocations(kSeaLocationsWrappedJson);
+    REQUIRE(locs.size() == 3);
+
     CHECK(locs[0].globalIdLocal == 3420100);
-    CHECK(locs[0].local         == "Porto");
     CHECK(locs[1].local         == "Lisboa");
-    CHECK(locs[2].globalIdLocal == 3540100);
 }
 
 TEST_CASE("parseSeaLocations: empty when 'data' key missing")
@@ -259,7 +274,34 @@ TEST_CASE("parseSeaLocations: empty on malformed JSON")
 
 // ── parseSeaForecastDay ───────────────────────────────────────────────────────
 
-static const char* kSeaDayJson = R"([
+static const char* kSeaDayJson = R"({
+    "owner": "IPMA",
+    "forecastDate": "2026-04-02",
+    "data": [
+        {
+            "globalIdLocal": 1111026,
+            "waveHighMin": "0.9",
+            "waveHighMax": "1.3",
+            "wavePeriodMin": "4.9",
+            "wavePeriodMax": "5.8",
+            "predWaveDir": "NW",
+            "sstMin": "14.9",
+            "sstMax": "15.1"
+        },
+        {
+            "globalIdLocal": 1130826,
+            "waveHighMin": "0.8",
+            "waveHighMax": "1.6",
+            "wavePeriodMin": "4.8",
+            "wavePeriodMax": "6.1",
+            "predWaveDir": "NW",
+            "sstMin": "13.2",
+            "sstMax": "13.4"
+        }
+    ]
+})";
+
+static const char* kSeaDayLegacyJson = R"([
     {
         "globalIdLocal": 3480200,
         "dataPrev": "2026-04-02",
@@ -270,33 +312,32 @@ static const char* kSeaDayJson = R"([
         "predWaveDir": "NW",
         "sstMin": 16.2,
         "sstMax": 17.1
-    },
-    {
-        "globalIdLocal": 3420100,
-        "dataPrev": "2026-04-02",
-        "waveHeightMin": 1.0,
-        "waveHeightMax": 2.5,
-        "wavePeriodMin": 10.0,
-        "wavePeriodMax": 14.0,
-        "predWaveDir": "W",
-        "sstMin": 15.0,
-        "sstMax": 15.8
     }
 ])";
 
 TEST_CASE("parseSeaForecastDay: returns only the entry matching globalIdLocal")
 {
-    const auto days = IpmaClient::parseSeaForecastDay(kSeaDayJson, 3480200);
+    const auto days = IpmaClient::parseSeaForecastDay(kSeaDayJson, 1111026);
+    REQUIRE(days.size() == 1);
+
+    CHECK(days[0].forecastDate  == "2026-04-02");
+    CHECK(days[0].waveHeightMin > 0.8f && days[0].waveHeightMin < 1.0f);
+    CHECK(days[0].waveHeightMax > 1.2f && days[0].waveHeightMax < 1.4f);
+    CHECK(days[0].wavePeriodMin > 4.8f && days[0].wavePeriodMin < 5.0f);
+    CHECK(days[0].wavePeriodMax > 5.7f && days[0].wavePeriodMax < 5.9f);
+    CHECK(days[0].predWaveDir   == "NW");
+    CHECK(days[0].sstMin        > 14.8f && days[0].sstMin < 15.0f);
+    CHECK(days[0].sstMax        > 15.0f && days[0].sstMax < 15.2f);
+}
+
+TEST_CASE("parseSeaForecastDay: supports legacy array payload")
+{
+    const auto days = IpmaClient::parseSeaForecastDay(kSeaDayLegacyJson, 3480200);
     REQUIRE(days.size() == 1);
 
     CHECK(days[0].forecastDate  == "2026-04-02");
     CHECK(days[0].waveHeightMin > 0.4f && days[0].waveHeightMin < 0.6f);
     CHECK(days[0].waveHeightMax > 1.1f && days[0].waveHeightMax < 1.3f);
-    CHECK(days[0].wavePeriodMin > 7.9f && days[0].wavePeriodMin < 8.1f);
-    CHECK(days[0].wavePeriodMax > 10.9f && days[0].wavePeriodMax < 11.1f);
-    CHECK(days[0].predWaveDir   == "NW");
-    CHECK(days[0].sstMin        > 16.1f && days[0].sstMin < 16.3f);
-    CHECK(days[0].sstMax        > 17.0f && days[0].sstMax < 17.2f);
 }
 
 TEST_CASE("parseSeaForecastDay: empty when globalIdLocal not found")
