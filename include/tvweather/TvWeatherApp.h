@@ -55,6 +55,8 @@ private:
 
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
+    std::vector<IpmaWindType>    windTypes_;
+    std::vector<IpmaWindDirectionType> windDirectionTypes_;
     tvweather::Language          language_ {tvweather::Language::English};
     tvweather::SavedPalette      originalPalette_;
     std::optional<tvweather::SavedPalette>  palette_;

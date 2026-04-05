@@ -321,6 +321,21 @@ const IpmaLocation* findLocation(const std::vector<IpmaLocation>& locations,
     return it != locations.end() ? &*it : nullptr;
 }
 
+std::vector<IpmaWarning> filterWarningsForArea(const std::vector<IpmaWarning>& warnings,
+                                               const std::string& areaCode)
+{
+    if (areaCode.empty())
+        return {};
+
+    std::vector<IpmaWarning> filtered;
+    filtered.reserve(warnings.size());
+    for (const auto& warning : warnings) {
+        if (warning.idAreaAviso == areaCode)
+            filtered.push_back(warning);
+    }
+    return filtered;
+}
+
 double toRadians(double degrees)
 {
     return degrees * 3.14159265358979323846 / 180.0;
@@ -477,6 +492,8 @@ TvWeatherApp::TvWeatherApp() :
     updateLocationCommandState();
     locations_    = IpmaClient::fetchLocations();
     weatherTypes_ = IpmaClient::fetchWeatherTypes();
+    windTypes_ = IpmaClient::fetchWindTypes();
+    windDirectionTypes_ = IpmaClient::fetchWindDirectionTypes();
 
     if (locations_.empty()) {
         messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
@@ -749,12 +766,25 @@ void TvWeatherApp::showForecast()
 
 void TvWeatherApp::showForecast(int globalIdLocal, const std::string& localName)
 {
-    const auto forecast = IpmaClient::fetchForecast(globalIdLocal, localName);
+    const auto* location = findLocation(locations_, globalIdLocal);
+    const std::string resolvedLocalName = location != nullptr ? location->local : localName;
+    const std::string areaCode = location != nullptr ? location->idAreaAviso : std::string();
+
+    const auto forecast = IpmaClient::fetchAggregateForecast(globalIdLocal, resolvedLocalName);
     if (forecast.days.empty()) {
         messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
         return;
     }
-    insertWindow(new ForecastWindow(forecast, weatherTypes_, language_));
+
+    const auto warnings = filterWarningsForArea(IpmaClient::fetchWarnings(), areaCode);
+
+    insertWindow(new ForecastWindow(forecast,
+                                    weatherTypes_,
+                                    windTypes_,
+                                    windDirectionTypes_,
+                                    warnings,
+                                    areaCode,
+                                    language_));
 }
 
 void TvWeatherApp::showWarnings()

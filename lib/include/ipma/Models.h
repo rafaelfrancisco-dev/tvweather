@@ -42,6 +42,61 @@ struct IpmaWeatherType {
     std::string descEN;
 };
 
+struct IpmaWindType {
+    int         id;
+    std::string descPT;
+    std::string descEN;
+};
+
+struct IpmaWindDirectionType {
+    std::string id;
+    std::string labelPT;
+    std::string labelEN;
+    std::string siglaPT;
+    std::string siglaEN;
+    std::string descPT;
+    std::string descEN;
+};
+
+struct IpmaAggregateHour {
+    std::string           forecastDateTime;
+    std::string           forecastDate;
+    std::optional<float>  temperature;
+    std::optional<float>  feltTemperature;
+    std::optional<int>    precipProbability;
+    int                   idWeatherType;
+    std::optional<float>  humidity;
+    std::optional<float>  windSpeed;
+    std::string           windDirection;
+    std::optional<float>  seaTotal;
+    std::string           waveDirection;
+    std::optional<float>  wavePeriod;
+    std::optional<float>  peakPeriod;
+    std::optional<float>  waterTemperature;
+    std::string           dataUpdate;
+};
+
+struct IpmaAggregateDay {
+    std::string                   forecastDate;
+    std::optional<int>            tMin;
+    std::optional<int>            tMax;
+    std::optional<int>            precipProbability;
+    std::optional<float>          uvIndex;
+    std::string                   uvInterval;
+    int                           idWeatherType;
+    std::optional<int>            windClass;
+    std::string                   windDirection;
+    std::string                   dataUpdate;
+    std::vector<IpmaAggregateHour> hours;
+};
+
+struct IpmaAggregateForecast {
+    int                          globalIdLocal;
+    std::string                  localName;
+    std::string                  dataUpdate;
+    std::vector<IpmaAggregateDay> days;
+};
+
 struct IpmaUvEntry {
     int         globalIdLocal;
     float       iUv;

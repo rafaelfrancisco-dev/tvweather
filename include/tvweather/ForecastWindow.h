@@ -10,11 +10,22 @@
 #include <string>
 #include <vector>
 
+class DividerView;
+class ForecastDayListView;
+class ForecastDetailPane;
+class ForecastHourlyView;
+class ForecastWarningsPane;
+class TScrollBar;
+
 class ForecastWindow : public TWindow {
 public:
-    ForecastWindow(const IpmaForecast&                forecast,
-                   const std::vector<IpmaWeatherType>& weatherTypes,
-                   tvweather::Language                language);
+    ForecastWindow(const IpmaAggregateForecast&             forecast,
+                   const std::vector<IpmaWeatherType>&      weatherTypes,
+                   const std::vector<IpmaWindType>&         windTypes,
+                   const std::vector<IpmaWindDirectionType>& windDirectionTypes,
+                   const std::vector<IpmaWarning>&          warnings,
+                   std::string                              warningAreaCode,
+                   tvweather::Language                      language);
 
     void changeBounds(const TRect& bounds) override;
     void handleEvent(TEvent& event) override;
@@ -22,9 +33,24 @@ public:
     void sizeLimits(TPoint& min, TPoint& max) override;
 
 private:
+    void applySelectionByDate(const std::string& dayDate, const std::string& dateTime);
+    void relayout();
     void updateTitle();
 
-    IpmaForecast                 forecast_;
-    std::vector<IpmaWeatherType> weatherTypes_;
-    tvweather::Language          language_;
+    IpmaAggregateForecast               forecast_;
+    std::vector<IpmaWeatherType>        weatherTypes_;
+    std::vector<IpmaWindType>           windTypes_;
+    std::vector<IpmaWindDirectionType>  windDirectionTypes_;
+    std::vector<IpmaWarning>            warnings_;
+    std::string                         warningAreaCode_;
+    tvweather::Language                 language_;
+    ForecastDayListView*                dayList_ {nullptr};
+    TScrollBar*                         dayScrollBar_ {nullptr};
+    DividerView*                        primaryDivider_ {nullptr};
+    ForecastHourlyView*                 hourlyView_ {nullptr};
+    TScrollBar*                         hourlyScrollBar_ {nullptr};
+    DividerView*                        sideDivider_ {nullptr};
+    ForecastDetailPane*                 detailPane_ {nullptr};
+    DividerView*                        detailDivider_ {nullptr};
+    ForecastWarningsPane*               warningsPane_ {nullptr};
 };

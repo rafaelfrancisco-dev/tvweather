@@ -35,8 +35,25 @@ const UiStrings kEnglishStrings {
     "Overview",
     "Details",
     "Temperature",
+    "Feels like",
+    "Humidity",
     "Rain risk",
     "Wind strength",
+    "Wind speed",
+    "Direction",
+    "Hour",
+    "Hourly",
+    "Selected hour",
+    "Updated",
+    "Hours shown in UTC.",
+    "Warnings",
+    "No active warnings for this location.",
+    "UV",
+    "Sea state",
+    "Wave dir",
+    "Wave period",
+    "Peak period",
+    "Water temp",
     "Navigate",
     "No forecast data available.",
     "Active Warnings",
@@ -91,8 +108,25 @@ const UiStrings kPortugueseStrings {
     "Resumo",
     "Detalhes",
     "Temperatura",
+    "Sensação térmica",
+    "Humidade",
     "Risco de chuva",
     "Intensidade do vento",
+    "Velocidade do vento",
+    "Direção",
+    "Hora",
+    "Horária",
+    "Hora selecionada",
+    "Atualizado",
+    "Horas apresentadas em UTC.",
+    "Avisos",
+    "Sem avisos ativos para esta localidade.",
+    "UV",
+    "Estado do mar",
+    "Dir. ondulação",
+    "Período ondulação",
+    "Período de pico",
+    "Temp. água",
     "Navegar",
     "Sem dados de previsão.",
     "Avisos Ativos",
@@ -128,8 +162,8 @@ const UiStrings& uiStrings(Language language) noexcept
 std::string forecastWindowTitle(const std::string& localName, Language language)
 {
     const char* suffix = language == Language::Portuguese
-        ? " - Previsão de 5 dias"
-        : " - 5-Day Forecast";
+        ? " - Previsão horária"
+        : " - Hourly Forecast";
     return localName + suffix;
 }
 
@@ -155,6 +189,82 @@ std::string weatherDescriptionForType(const std::vector<IpmaWeatherType>& types,
         break;
     }
     return "-";
+}
+
+std::string windTypeDescriptionForId(const std::vector<IpmaWindType>& types,
+                                     int id,
+                                     Language language)
+{
+    for (const auto& type : types) {
+        if (type.id != id)
+            continue;
+
+        if (language == Language::Portuguese) {
+            if (!type.descPT.empty())
+                return type.descPT;
+            if (!type.descEN.empty())
+                return type.descEN;
+        } else {
+            if (!type.descEN.empty())
+                return type.descEN;
+            if (!type.descPT.empty())
+                return type.descPT;
+        }
+        break;
+    }
+
+    return windStrengthLabel(id, language);
+}
+
+std::string windDirectionLabelForCode(const std::vector<IpmaWindDirectionType>& types,
+                                      const std::string& code,
+                                      Language language)
+{
+    for (const auto& type : types) {
+        if (type.id != code)
+            continue;
+
+        if (language == Language::Portuguese) {
+            if (!type.siglaPT.empty())
+                return type.siglaPT;
+            if (!type.labelPT.empty())
+                return type.labelPT;
+        } else {
+            if (!type.siglaEN.empty())
+                return type.siglaEN;
+            if (!type.labelEN.empty())
+                return type.labelEN;
+        }
+        break;
+    }
+
+    return code.empty() ? "-" : code;
+}
+
+std::string windDirectionDescriptionForCode(
+    const std::vector<IpmaWindDirectionType>& types,
+    const std::string& code,
+    Language language)
+{
+    for (const auto& type : types) {
+        if (type.id != code)
+            continue;
+
+        if (language == Language::Portuguese) {
+            if (!type.descPT.empty())
+                return type.descPT;
+            if (!type.labelPT.empty())
+                return type.labelPT;
+        } else {
+            if (!type.descEN.empty())
+                return type.descEN;
+            if (!type.labelEN.empty())
+                return type.labelEN;
+        }
+        break;
+    }
+
+    return code.empty() ? "-" : code;
 }
 
 const char* rainRiskLabel(int precipitaProb, Language language) noexcept

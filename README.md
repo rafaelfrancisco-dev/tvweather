@@ -6,16 +6,16 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ Weather                                                          Options      ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  ╔════════════════ Lisboa - 5-Day Forecast ═════════════════╗                ║
-║  ║ 04-02 11/23   0% │ Details 1/5                           ║                ║
-║  ║ 04-03 10/26   0% │ 2026-04-02                            ║                ║
-║  ║ 04-04 14/26   0% │ Partly cloudy                         ║                ║
-║  ║ 04-05 13/28   0% │ Temperature: 11° / 23°                ║                ║
-║  ║ 04-06 11/24  35% │ Rain: 0%                              ║                ║
-║  ║                  │ Rain risk: Low                        ║                ║
-║  ║                  │ Wind: N / 2                           ║                ║
-║  ║                  │ Wind strength: Moderate               ║                ║
-║  ╚═════════════════════════════════════════════════════════╝                 ║
+║  ╔════════════ Lisboa - Hourly Forecast ═══════════════╗                    ║
+║  ║ Thu 04-02 11/23 0% N Partly cloudy                 ║                    ║
+║  ║ Fri 04-03 10/26 0% N Clear sky                     ║                    ║
+║  ╟─────────────────────────────────────────────────────╢                    ║
+║  ║ Hour P%  T/F    Wind       Sea        H2O Cond     ║                    ║
+║  ║ 12H  0%  16/14  24 N       2.1 N      14  Clear sky║                    ║
+║  ║ 15H  0%  17/15  31 N       2.3 N      14  Clear sky║                    ║
+║  ║ Date: 2026-04-02        Rain: 0%                   ║                    ║
+║  ║ From: 2026-04-02 06:00  To: 2026-04-03 06:00       ║                    ║
+║  ╚═════════════════════════════════════════════════════╝                    ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║ ~Ctrl-Q~ Exit  ~F2~ Refresh                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -25,7 +25,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 
 - **Location picker with search** — all IPMA forecast locations (mainland Portugal + Madeira + Azores) with a live filter field to narrow by name
 - **Selected location state** — the last picked location becomes the active location, is shown in the status bar, is reused by location-based menus, and persists across restarts until cleared
-- **5-day forecast** — split view with a selectable day list plus a detail pane for min/max temperature, precipitation probability, wind direction, wind class, and localized condition text
+- **Hourly aggregate forecast** — forecast window built from IPMA's aggregate locality feed with a selectable day list, hourly rows, focused-hour details, inline warnings, and marine values when present
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
 - **UV Index** — daily UV index forecast per location with time intervals (e.g. 13h–15h)
 - **Sea conditions** — 3-day wave height, wave period, wave direction, and sea surface temperature for 12 coastal locations
@@ -65,6 +65,7 @@ Configure and build (macOS / Linux):
 ```sh
 cmake --preset unix-debug
 cmake --build --preset unix-debug
+ctest --test-dir build/unix-debug --output-on-failure
 ```
 
 Run:
@@ -104,7 +105,7 @@ The app fetches the location list on startup. If no location is already saved, i
 | `F8` | Clear the active location |
 | `Ctrl-Q` | Quit |
 
-In forecast and sea windows, the day list on the left is a standard Turbo Vision list view. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through the available forecast days.
+In the forecast window, the day list is a standard Turbo Vision list view and the hourly table is keyboard-selectable. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through forecast days and hourly rows.
 
 ### Selected location flow
 
@@ -119,7 +120,7 @@ In forecast and sea windows, the day list on the left is a standard Turbo Vision
 
 | Item | Key | Description |
 |---|---|---|
-| Forecast… | F3 | Opens the forecast for the active location; if none is selected, opens the location picker first |
+| Forecast… | F3 | Opens the aggregate hourly forecast for the active location; if none is selected, opens the location picker first |
 | Active Warnings | F4 | Fetches and displays current non-green meteorological warnings |
 | UV Index… | F5 | Uses the active location; if none is selected, opens the location picker first |
 | Sea Conditions… | F6 | Uses the active location and automatically matches it to the nearest available coastal sea location |
@@ -181,9 +182,9 @@ tvweather/
 │   └── main.cpp                  # Entry point
 ├── lib/                          # ipmalib — data layer (no TurboVision)
 │   ├── include/ipma/
-│   │   ├── Models.h              # Plain data structs
+│   │   ├── Models.h              # Plain data structs, aggregate forecast models, lookup types
 │   │   └── Client.h              # IpmaClient declaration
-│   └── IpmaClient.cpp            # HTTP (curl) + JSON parsing
+│   └── IpmaClient.cpp            # HTTP (curl) + JSON parsing for daily, aggregate, warnings, UV, and sea data
 ├── include/tvweather/            # UI layer headers
 │   ├── Commands.h                # App command IDs
 │   ├── Language.h                # UI language enum
@@ -192,7 +193,7 @@ tvweather/
 │   ├── TvWeatherApp.h
 │   ├── OptionsDialog.h
 │   ├── LocationPickerDialog.h
-│   ├── ForecastWindow.h
+│   ├── ForecastWindow.h          # Aggregate forecast window
 │   ├── WarningsWindow.h
 │   ├── UvWindow.h
 │   └── SeaWindow.h
@@ -202,7 +203,7 @@ tvweather/
 │   ├── Settings.cpp
 │   ├── OptionsDialog.cpp
 │   ├── LocationPickerDialog.cpp
-│   ├── ForecastWindow.cpp
+│   ├── ForecastWindow.cpp        # Composite day list + hourly grid + detail + warnings window
 │   ├── WarningsWindow.cpp
 │   ├── UvWindow.cpp
 │   └── SeaWindow.cpp

@@ -18,6 +18,10 @@ static const char* kLocationsJson = R"({
 
 static const char* kLocationsNoDataJson = R"({"owner": "IPMA"})";
 static const char* kLocationsMalformed  = R"({not valid json)";
+static const char* kLocationsArrayJson = R"([
+    {"globalIdLocal": 1110600, "local": "Lisboa", "idRegiao": 1, "idAreaAviso": "LIS", "latitude": "38.7167", "longitude": "-9.1333"},
+    {"globalIdLocal": 1110922, "local": "Praia da Foz do Lizandro", "idRegiao": 1, "idAreaAviso": "LIS", "latitude": "38.9500", "longitude": "-9.4200"}
+])";
 
 static const char* kForecastJson = R"({
     "owner": "IPMA",
@@ -57,6 +61,108 @@ static const char* kWeatherTypesJson = R"([
     {"idWeatherType": 6, "descIdWeatherTypePT": "Aguaceiros",         "descIdWeatherTypeEN": "Showers"}
 ])";
 
+static const char* kWeatherTypesObjectJson = R"({
+    "-99": {"PT": "---", "EN": "---"},
+    "2": {"PT": "Céu pouco nublado", "EN": "Partly cloudy"},
+    "1": {"PT": "Céu limpo", "EN": "Clear sky"}
+})";
+
+static const char* kWindTypesJson = R"({
+    "1": {"PT": "Fraco", "EN": "Weak"},
+    "2": {"PT": "Moderado", "EN": "Moderate"},
+    "3": {"PT": "Forte", "EN": "Strong"}
+})";
+
+static const char* kWindDirectionTypesJson = R"({
+    "N": {"PT": "Norte", "EN": "North", "SiglaPT": "N", "SiglaEN": "N", "DescPT": "Vento de norte", "DescEN": "Wind from North"},
+    "NW": {"PT": "Noroeste", "EN": "Northwest", "SiglaPT": "NO", "SiglaEN": "NW", "DescPT": "Vento de noroeste", "DescEN": "Wind from Northwest"}
+})";
+
+static const char* kAggregateForecastJson = R"([
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-02T00:00:00",
+        "idPeriodo": 24,
+        "tMin": "11.8",
+        "tMax": "23.9",
+        "probabilidadePrecipita": "0.0",
+        "idTipoTempo": 2,
+        "idFfxVento": 2,
+        "iUv": "6.1",
+        "intervaloHora": "13h-14h",
+        "ddVento": "N",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-02T15:00:00",
+        "idPeriodo": 1,
+        "tMed": "16.6",
+        "utci": "13.8",
+        "probabilidadePrecipita": "0.0",
+        "idTipoTempo": 1,
+        "hR": "71.3",
+        "ffVento": "31.3",
+        "ddVento": "N",
+        "marTotal": "2.3",
+        "dirOndulacao": "N",
+        "periodOndulacao": "5.6",
+        "periodoPico": "9.5",
+        "tempAguaMar": "14.4",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-02T12:00:00",
+        "idPeriodo": 1,
+        "tMed": "16.3",
+        "utci": "14.2",
+        "probabilidadePrecipita": "0.0",
+        "idTipoTempo": 1,
+        "hR": "79.5",
+        "ffVento": "23.8",
+        "ddVento": "N",
+        "marTotal": "2.1",
+        "dirOndulacao": "N",
+        "periodOndulacao": "5.7",
+        "periodoPico": "10.1",
+        "tempAguaMar": "14.4",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-03T00:00:00",
+        "idPeriodo": 24,
+        "tMin": "11.3",
+        "tMax": "20.2",
+        "probabilidadePrecipita": "35.0",
+        "idTipoTempo": 6,
+        "idFfxVento": 3,
+        "iUv": "6.2",
+        "intervaloHora": "13h-14h",
+        "ddVento": "NW",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-03T02:00:00",
+        "idPeriodo": 1,
+        "tMed": "12.5",
+        "utci": "11.2",
+        "probabilidadePrecipita": "-99.0",
+        "idTipoTempo": 1,
+        "hR": "91.7",
+        "ffVento": "12.6",
+        "ddVento": "N",
+        "marTotal": "1.9",
+        "dirOndulacao": "N",
+        "periodOndulacao": "5.4",
+        "periodoPico": "9.6",
+        "tempAguaMar": "14.2",
+        "dataUpdate": "2026-04-02T07:53:40"
+    }
+])";
+
 // ── parseLocations ────────────────────────────────────────────────────────────
 
 TEST_CASE("parseLocations: parses data array from wrapped JSON")
@@ -82,6 +188,15 @@ TEST_CASE("parseLocations: empty when 'data' key missing")
 {
     const auto locs = IpmaClient::parseLocations(kLocationsNoDataJson);
     CHECK(locs.empty());
+}
+
+TEST_CASE("parseLocations: parses top-level location arrays")
+{
+    const auto locs = IpmaClient::parseLocations(kLocationsArrayJson);
+    REQUIRE(locs.size() == 2);
+    CHECK(locs[1].globalIdLocal == 1110922);
+    CHECK(locs[1].local == "Praia da Foz do Lizandro");
+    CHECK(locs[1].idAreaAviso == "LIS");
 }
 
 TEST_CASE("parseLocations: empty on malformed JSON")
@@ -199,6 +314,68 @@ TEST_CASE("parseWeatherTypes: parses id and descriptions")
 TEST_CASE("parseWeatherTypes: empty on malformed JSON")
 {
     CHECK(IpmaClient::parseWeatherTypes("").empty());
+}
+
+TEST_CASE("parseWeatherTypes: parses object lookup payloads")
+{
+    const auto types = IpmaClient::parseWeatherTypes(kWeatherTypesObjectJson);
+    REQUIRE(types.size() == 3);
+    CHECK(types[0].id == -99);
+    CHECK(types[1].id == 1);
+    CHECK(types[2].descEN == "Partly cloudy");
+}
+
+TEST_CASE("parseWindTypes: parses wind strength lookups")
+{
+    const auto types = IpmaClient::parseWindTypes(kWindTypesJson);
+    REQUIRE(types.size() == 3);
+    CHECK(types[1].id == 2);
+    CHECK(types[1].descPT == "Moderado");
+    CHECK(types[2].descEN == "Strong");
+}
+
+TEST_CASE("parseWindDirectionTypes: parses direction labels and siglas")
+{
+    const auto dirs = IpmaClient::parseWindDirectionTypes(kWindDirectionTypesJson);
+    REQUIRE(dirs.size() == 2);
+    CHECK(dirs[0].id == "N");
+    CHECK(dirs[0].descEN == "Wind from North");
+    CHECK(dirs[1].siglaPT == "NO");
+}
+
+TEST_CASE("parseAggregateForecast: splits daily and hourly rows by day")
+{
+    const auto forecast = IpmaClient::parseAggregateForecast(kAggregateForecastJson, 1110600, "Lisboa");
+    REQUIRE(forecast.days.size() == 2);
+
+    CHECK(forecast.globalIdLocal == 1110600);
+    CHECK(forecast.localName == "Lisboa");
+    CHECK(forecast.dataUpdate == "2026-04-02T07:53:40");
+
+    const auto& day0 = forecast.days[0];
+    CHECK(day0.forecastDate == "2026-04-02");
+    REQUIRE(day0.tMin.has_value());
+    REQUIRE(day0.tMax.has_value());
+    CHECK(*day0.tMin == 11);
+    CHECK(*day0.tMax == 23);
+    CHECK(day0.idWeatherType == 2);
+    REQUIRE(day0.uvIndex.has_value());
+    CHECK(*day0.uvIndex > 6.0f && *day0.uvIndex < 6.2f);
+    REQUIRE(day0.hours.size() == 2);
+    CHECK(day0.hours[0].forecastDateTime == "2026-04-02T12:00:00");
+    CHECK(day0.hours[1].forecastDateTime == "2026-04-02T15:00:00");
+}
+
+TEST_CASE("parseAggregateForecast: treats -99 sentinels as missing optional values")
+{
+    const auto forecast = IpmaClient::parseAggregateForecast(kAggregateForecastJson, 1110600, "Lisboa");
+    REQUIRE(forecast.days.size() == 2);
+    REQUIRE(forecast.days[1].hours.size() == 1);
+
+    const auto& hour = forecast.days[1].hours[0];
+    CHECK(!hour.precipProbability.has_value());
+    REQUIRE(hour.waterTemperature.has_value());
+    CHECK(*hour.waterTemperature > 14.1f && *hour.waterTemperature < 14.3f);
 }
 
 // ── parseUv ───────────────────────────────────────────────────────────────────

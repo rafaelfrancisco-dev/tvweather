@@ -31,6 +31,32 @@ TEST_CASE("weatherDescriptionForType prefers Portuguese descriptions in Portugue
           == "Poucas nuvens");
 }
 
+TEST_CASE("windTypeDescriptionForId prefers localized lookup descriptions")
+{
+    const std::vector<IpmaWindType> types {
+        {1, "Fraco", "Weak"},
+        {2, "Moderado", "Moderate"},
+    };
+
+    CHECK(tvweather::windTypeDescriptionForId(types, 2, tvweather::Language::Portuguese)
+          == "Moderado");
+    CHECK(tvweather::windTypeDescriptionForId(types, 1, tvweather::Language::English)
+          == "Weak");
+}
+
+TEST_CASE("windDirection helpers prefer localized siglas and descriptions")
+{
+    const std::vector<IpmaWindDirectionType> directions {
+        {"NW", "Noroeste", "Northwest", "NO", "NW", "Vento de noroeste", "Wind from Northwest"},
+    };
+
+    CHECK(tvweather::windDirectionLabelForCode(directions, "NW", tvweather::Language::Portuguese)
+          == "NO");
+    CHECK(tvweather::windDirectionDescriptionForCode(
+              directions, "NW", tvweather::Language::English)
+          == "Wind from Northwest");
+}
+
 TEST_CASE("uiStrings returns localized chrome labels")
 {
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).optionsMenu)
@@ -51,6 +77,10 @@ TEST_CASE("uiStrings returns localized chrome labels")
           == "Localidade: nenhuma seleccionada");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastDetails)
           == "Details");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).forecastHourly)
+          == "Hourly");
+    CHECK(std::string(tvweather::uiStrings(tvweather::Language::Portuguese).forecastUtcNotice)
+          == "Horas apresentadas em UTC.");
     CHECK(std::string(tvweather::uiStrings(tvweather::Language::English).seaClosestNotice)
           == "Sea conditions are shown for the closest coastal location.");
 }

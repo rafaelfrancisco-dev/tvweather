@@ -38,8 +38,25 @@ struct UiStrings {
     const char* forecastOverview;
     const char* forecastDetails;
     const char* forecastTemperature;
+    const char* forecastFeelsLike;
+    const char* forecastHumidity;
     const char* forecastRainRisk;
     const char* forecastWindStrength;
+    const char* forecastWindSpeed;
+    const char* forecastDirection;
+    const char* forecastHour;
+    const char* forecastHourly;
+    const char* forecastSelectedHour;
+    const char* forecastUpdated;
+    const char* forecastUtcNotice;
+    const char* forecastWarningsInline;
+    const char* forecastWarningsEmpty;
+    const char* forecastUv;
+    const char* forecastSeaState;
+    const char* forecastWaveDirection;
+    const char* forecastWavePeriod;
+    const char* forecastPeakPeriod;
+    const char* forecastWaterTemperature;
     const char* forecastNavigation;
     const char* forecastEmpty;
     const char* warningsTitle;
@@ -68,6 +85,16 @@ std::string forecastWindowTitle(const std::string& localName, Language language)
 std::string weatherDescriptionForType(const std::vector<IpmaWeatherType>& types,
                                       int id,
                                       Language language);
+std::string windTypeDescriptionForId(const std::vector<IpmaWindType>& types,
+                                     int id,
+                                     Language language);
+std::string windDirectionLabelForCode(const std::vector<IpmaWindDirectionType>& types,
+                                      const std::string& code,
+                                      Language language);
+std::string windDirectionDescriptionForCode(
+    const std::vector<IpmaWindDirectionType>& types,
+    const std::string& code,
+    Language language);
 const char* rainRiskLabel(int precipitaProb, Language language) noexcept;
 const char* windStrengthLabel(int classWindSpeed, Language language) noexcept;
 const char* languageCode(Language language) noexcept;
