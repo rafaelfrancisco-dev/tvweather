@@ -163,6 +163,105 @@ static const char* kAggregateForecastJson = R"([
     }
 ])";
 
+static const char* kAggregateForecastWithUnavailableDaysJson = R"([
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-02T00:00:00",
+        "idPeriodo": 24,
+        "tMin": "11.8",
+        "tMax": "23.9",
+        "probabilidadePrecipita": "0.0",
+        "idTipoTempo": 2,
+        "idFfxVento": 2,
+        "iUv": "6.1",
+        "intervaloHora": "13h-14h",
+        "ddVento": "N",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-03T00:00:00",
+        "idPeriodo": 24,
+        "tMin": "-99.0",
+        "tMax": "-99.0",
+        "probabilidadePrecipita": "-99.0",
+        "idTipoTempo": -99,
+        "idFfxVento": "-99.0",
+        "iUv": "-99.0",
+        "intervaloHora": "",
+        "ddVento": "",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-03T03:00:00",
+        "idPeriodo": 1,
+        "tMed": "-99.0",
+        "utci": "-99.0",
+        "probabilidadePrecipita": "-99.0",
+        "idTipoTempo": -99,
+        "hR": "-99.0",
+        "ffVento": "-99.0",
+        "ddVento": "",
+        "marTotal": "-99.0",
+        "dirOndulacao": "",
+        "periodOndulacao": "-99.0",
+        "periodoPico": "-99.0",
+        "tempAguaMar": "-99.0",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-04T00:00:00",
+        "idPeriodo": 24,
+        "tMin": "10.0",
+        "tMax": "19.0",
+        "probabilidadePrecipita": "20.0",
+        "idTipoTempo": 1,
+        "idFfxVento": 1,
+        "iUv": "5.0",
+        "intervaloHora": "12h-13h",
+        "ddVento": "N",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-04T03:00:00",
+        "idPeriodo": 1,
+        "tMed": "-99.0",
+        "utci": "-99.0",
+        "probabilidadePrecipita": "-99.0",
+        "idTipoTempo": -99,
+        "hR": "-99.0",
+        "ffVento": "-99.0",
+        "ddVento": "",
+        "marTotal": "-99.0",
+        "dirOndulacao": "",
+        "periodOndulacao": "-99.0",
+        "periodoPico": "-99.0",
+        "tempAguaMar": "-99.0",
+        "dataUpdate": "2026-04-02T07:53:40"
+    },
+    {
+        "globalIdLocal": 1110600,
+        "dataPrev": "2026-04-04T06:00:00",
+        "idPeriodo": 1,
+        "tMed": "13.2",
+        "utci": "12.4",
+        "probabilidadePrecipita": "10.0",
+        "idTipoTempo": 1,
+        "hR": "82.0",
+        "ffVento": "11.0",
+        "ddVento": "N",
+        "marTotal": "1.3",
+        "dirOndulacao": "N",
+        "periodOndulacao": "4.5",
+        "periodoPico": "8.2",
+        "tempAguaMar": "14.1",
+        "dataUpdate": "2026-04-02T07:53:40"
+    }
+])";
+
 // ── parseLocations ────────────────────────────────────────────────────────────
 
 TEST_CASE("parseLocations: parses data array from wrapped JSON")
@@ -376,6 +475,19 @@ TEST_CASE("parseAggregateForecast: treats -99 sentinels as missing optional valu
     CHECK(!hour.precipProbability.has_value());
     REQUIRE(hour.waterTemperature.has_value());
     CHECK(*hour.waterTemperature > 14.1f && *hour.waterTemperature < 14.3f);
+}
+
+TEST_CASE("parseAggregateForecast: filters out days without usable hourly data")
+{
+    const auto forecast = IpmaClient::parseAggregateForecast(
+        kAggregateForecastWithUnavailableDaysJson, 1110600, "Lisboa");
+
+    REQUIRE(forecast.days.size() == 2);
+    CHECK(forecast.days[0].forecastDate == "2026-04-02");
+    CHECK(forecast.days[1].forecastDate == "2026-04-04");
+    REQUIRE(forecast.days[0].hours.empty() == false);
+    REQUIRE(forecast.days[1].hours.size() == 1);
+    CHECK(forecast.days[1].hours[0].forecastDateTime == "2026-04-04T06:00:00");
 }
 
 // ── parseUv ───────────────────────────────────────────────────────────────────

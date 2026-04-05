@@ -90,6 +90,22 @@ std::string forecastDatePart(const std::string& dateTime)
     return dateTime.size() >= 10 ? dateTime.substr(0, 10) : dateTime;
 }
 
+bool hasAggregateHourData(const IpmaAggregateHour& hour)
+{
+    return hour.temperature.has_value()
+        || hour.feltTemperature.has_value()
+        || hour.precipProbability.has_value()
+        || hour.idWeatherType != -99
+        || hour.humidity.has_value()
+        || hour.windSpeed.has_value()
+        || !hour.windDirection.empty()
+        || hour.seaTotal.has_value()
+        || !hour.waveDirection.empty()
+        || hour.wavePeriod.has_value()
+        || hour.peakPeriod.has_value()
+        || hour.waterTemperature.has_value();
+}
+
 } // namespace
 
 // ── HTTP ──────────────────────────────────────────────────────────────────────
@@ -244,12 +260,25 @@ IpmaAggregateForecast IpmaClient::parseAggregateForecast(const std::string& raw,
                   });
 
         for (auto& day : forecast.days) {
+            day.hours.erase(std::remove_if(day.hours.begin(),
+                                           day.hours.end(),
+                                           [](const IpmaAggregateHour& hour) {
+                                               return !hasAggregateHourData(hour);
+                                           }),
+                            day.hours.end());
             std::sort(day.hours.begin(),
                       day.hours.end(),
                       [](const IpmaAggregateHour& left, const IpmaAggregateHour& right) {
                           return left.forecastDateTime < right.forecastDateTime;
                       });
         }
+
+        forecast.days.erase(std::remove_if(forecast.days.begin(),
+                                           forecast.days.end(),
+                                           [](const IpmaAggregateDay& day) {
+                                               return day.hours.empty();
+                                           }),
+                            forecast.days.end());
     } catch (...) {}
 
     return forecast;

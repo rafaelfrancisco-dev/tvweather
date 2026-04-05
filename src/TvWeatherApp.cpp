@@ -474,6 +474,22 @@ void refreshWindowLanguage(TView* view, void* languagePtr)
         seaWindow->setLanguage(language);
 }
 
+bool isLocationDependentWindow(TView* view)
+{
+    return dynamic_cast<ForecastWindow*>(view) != nullptr
+        || dynamic_cast<UvWindow*>(view) != nullptr
+        || dynamic_cast<SeaWindow*>(view) != nullptr;
+}
+
+void collectLocationDependentWindows(TView* view, void* windowsPtr)
+{
+    if (!isLocationDependentWindow(view))
+        return;
+
+    auto& windows = *static_cast<std::vector<TWindow*>*>(windowsPtr);
+    windows.push_back(static_cast<TWindow*>(view));
+}
+
 } // namespace
 
 TvWeatherApp::TvWeatherApp() :
@@ -647,10 +663,21 @@ void TvWeatherApp::clearSelectedLocation()
     if (!selectedLocation_.has_value())
         return;
 
+    closeLocationDependentWindows();
     selectedLocation_.reset();
     saveSettings();
     rebuildStatusLine();
     updateLocationCommandState();
+}
+
+void TvWeatherApp::closeLocationDependentWindows()
+{
+    std::vector<TWindow*> windows;
+    TProgram::deskTop->forEach(collectLocationDependentWindows, &windows);
+
+    for (TWindow* window : windows)
+        if (window != nullptr)
+            window->close();
 }
 
 void TvWeatherApp::updateLocationCommandState()

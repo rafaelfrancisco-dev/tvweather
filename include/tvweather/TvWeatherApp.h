@@ -35,6 +35,7 @@ private:
 
     void applySavedPalette(const std::optional<tvweather::SavedPalette>& palette);
     void clearSelectedLocation();
+    void closeLocationDependentWindows();
     bool ensureSelectedLocation();
     std::optional<tvweather::SavedLocation> pickLocation(const std::vector<IpmaLocation>& locations);
     void refreshLanguage(tvweather::Language language);

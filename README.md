@@ -25,7 +25,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 
 - **Location picker with search** — all IPMA forecast locations (mainland Portugal + Madeira + Azores) with a live filter field to narrow by name
 - **Selected location state** — the last picked location becomes the active location, is shown in the status bar, is reused by location-based menus, and persists across restarts until cleared
-- **Hourly aggregate forecast** — forecast window built from IPMA's aggregate locality feed with a selectable day list, hourly rows, focused-hour details, inline warnings, and marine values when present
+- **Hourly aggregate forecast** — forecast window built from IPMA's aggregate locality feed with a selectable day list, hourly rows, focused-hour details, inline warnings, marine values when present, and placeholder-only dates filtered out
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
 - **UV Index** — daily UV index forecast per location with time intervals (e.g. 13h–15h)
 - **Sea conditions** — 3-day wave height, wave period, wave direction, and sea surface temperature for 12 coastal locations
@@ -35,7 +35,7 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 - **Language switching** — English/Portuguese UI toggle persisted across restarts
 - **Palette picker** — TVision color editor available from the Options menu, with palette changes persisted across restarts when the terminal color mode matches
 - **Clear location** — remove the active location to force a new pick later
-- Multiple forecast/UV/sea windows can be open simultaneously (tiled or overlapping)
+- Multiple forecast/UV/sea windows can be open simultaneously (tiled or overlapping) while an active location is selected
 
 ## Requirements
 
@@ -105,7 +105,7 @@ The app fetches the location list on startup. If no location is already saved, i
 | `F8` | Clear the active location |
 | `Ctrl-Q` | Quit |
 
-In the forecast window, the day list is a standard Turbo Vision list view and the hourly table is keyboard-selectable. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through forecast days and hourly rows.
+In the forecast window, the day list is a standard Turbo Vision list view and the hourly table is keyboard-selectable. Use `Up` / `Down`, `PgUp` / `PgDn`, `Home`, and `End` to move through forecast days and hourly rows. Dates that only contain unavailable IPMA placeholder values are hidden from the day list.
 
 ### Selected location flow
 
@@ -114,7 +114,7 @@ In the forecast window, the day list is a standard Turbo Vision list view and th
 3. `Forecast...` reuses that active location directly.
 4. `UV Index...` reuses that active location directly.
 5. `Sea Conditions...` reuses the active location and automatically picks the nearest available coastal sea location from the IPMA sea dataset.
-6. `Clear Location` removes the active location from memory and from the saved config so the next location-dependent action can ask again.
+6. `Clear Location` removes the active location from memory and from the saved config, closes all open forecast/UV/sea windows, and leaves location-independent windows alone so the next location-dependent action can ask again.
 
 **Weather menu items:**
 
