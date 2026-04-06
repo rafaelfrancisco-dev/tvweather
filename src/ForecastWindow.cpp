@@ -841,6 +841,10 @@ public:
             return;
         }
 
+        const std::string precipIntensityStr = hour->precipIntensity.has_value()
+            ? tvweather::precipIntensityLabel(*hour->precipIntensity, language_)
+            : "--";
+
         const std::vector<std::string> lines {
             std::string(strings.forecastHour) + ": " + hourLabelFromDateTime(hour->forecastDateTime),
             std::string(strings.forecastConditions) + ": "
@@ -853,6 +857,7 @@ public:
                 + formatOptionalFloat(hour->humidity, 0, "%"),
             std::string(strings.forecastRain) + ": "
                 + formatOptionalInt(hour->precipProbability, "%"),
+            std::string(strings.forecastRainIntensity) + ": " + precipIntensityStr,
             std::string(strings.forecastWindSpeed) + ": "
                 + formatOptionalFloat(hour->windSpeed, 0, " km/h"),
             std::string(strings.forecastDirection) + ": "

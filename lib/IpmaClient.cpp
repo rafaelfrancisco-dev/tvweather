@@ -239,6 +239,7 @@ IpmaAggregateForecast IpmaClient::parseAggregateForecast(const std::string& raw,
                 hour.temperature        = parseFloat(item, "tMed", true);
                 hour.feltTemperature    = parseFloat(item, "utci", true);
                 hour.precipProbability  = parseInt(item, "probabilidadePrecipita", true);
+                hour.precipIntensity    = parseInt(item, "idIntensidadePrecipita", true);
                 hour.idWeatherType      = parseInt(item, "idTipoTempo", true).value_or(-99);
                 hour.humidity           = parseFloat(item, "hR", true);
                 hour.windSpeed          = parseFloat(item, "ffVento", true);
@@ -590,4 +591,93 @@ IpmaSeaForecast IpmaClient::fetchSeaForecast(int globalIdLocal,
             forecast.days.push_back(std::move(e));
     }
     return forecast;
+}
+
+std::vector<IpmaStation> IpmaClient::parseStations(const std::string& raw)
+{
+    std::vector<IpmaStation> out;
+    try {
+        const auto j = json::parse(raw);
+        const auto featuresIt = j.find("features");
+        if (featuresIt == j.end() || !featuresIt->is_array())
+            return out;
+
+        for (const auto& feature : *featuresIt) {
+            IpmaStation station;
+            const auto& props = feature.at("properties");
+            station.idEstacao    = props.value("idEstacao", 0);
+            station.localEstacao = props.value("localEstacao", "");
+
+            const auto& geom = feature.at("geometry");
+            const auto& coords = geom.at("coordinates");
+            if (coords.is_array() && coords.size() >= 2) {
+                station.longitude = coords[0].get<double>();
+                station.latitude  = coords[1].get<double>();
+            }
+
+            if (station.idEstacao != 0)
+                out.push_back(std::move(station));
+        }
+    } catch (...) {}
+    return out;
+}
+
+IpmaStationObservation IpmaClient::parseObservation(const std::string& raw,
+                                                     int stationId,
+                                                     const std::string& localEstacao)
+{
+    IpmaStationObservation obs;
+    obs.idEstacao    = stationId;
+    obs.localEstacao = localEstacao;
+
+    try {
+        const auto j = json::parse(raw);
+        if (!j.is_object())
+            return obs;
+
+        // Find the most recent timestamp key.
+        std::string latestTimestamp;
+        for (auto it = j.begin(); it != j.end(); ++it)
+            if (it.key() > latestTimestamp)
+                latestTimestamp = it.key();
+
+        if (latestTimestamp.empty())
+            return obs;
+
+        obs.timestamp = latestTimestamp;
+
+        const auto& timestampObj = j.at(latestTimestamp);
+        const std::string stationKey = std::to_string(stationId);
+        const auto stationIt = timestampObj.find(stationKey);
+        if (stationIt == timestampObj.end() || !stationIt->is_object())
+            return obs;
+
+        const auto& s = *stationIt;
+        obs.temperatura       = parseFloat(s, "temperatura",       true);
+        obs.intensidadeVentoKM = parseFloat(s, "intensidadeVentoKM", true);
+        obs.idDireccVento     = parseInt(s,   "idDireccVento",     true);
+        obs.humidade          = parseFloat(s, "humidade",          true);
+        obs.pressao           = parseFloat(s, "pressao",           true);
+        obs.radiacao          = parseFloat(s, "radiacao",          true);
+        obs.precAcumulada     = parseFloat(s, "precAcumulada",     true);
+    } catch (...) {}
+
+    return obs;
+}
+
+std::vector<IpmaStation> IpmaClient::fetchStations()
+{
+    return parseStations(
+        httpGet(std::string(kBase)
+            + "/open-data/observation/meteorology/stations/stations.json"));
+}
+
+IpmaStationObservation IpmaClient::fetchObservation(int stationId,
+                                                     const std::string& localEstacao)
+{
+    return parseObservation(
+        httpGet(std::string(kBase)
+            + "/open-data/observation/meteorology/stations/observations.json"),
+        stationId,
+        localEstacao);
 }

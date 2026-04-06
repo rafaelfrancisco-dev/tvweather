@@ -78,6 +78,15 @@ struct UiStrings {
     const char* seaClosestNotice;
     const char* seaClosestLocationLabel;
     const char* seaClosestDistanceLabel;
+    const char* forecastRainIntensity;
+    const char* obsMenuLabel;
+    const char* obsWindowSuffix;
+    const char* obsStationLabel;
+    const char* obsObservedAt;
+    const char* obsPressure;
+    const char* obsRadiation;
+    const char* obsPrecipAccum;
+    const char* obsEmpty;
 };
 
 const UiStrings& uiStrings(Language language) noexcept;
@@ -97,6 +106,8 @@ std::string windDirectionDescriptionForCode(
     Language language);
 const char* rainRiskLabel(int precipitaProb, Language language) noexcept;
 const char* windStrengthLabel(int classWindSpeed, Language language) noexcept;
+const char* precipIntensityLabel(int id, Language language) noexcept;
+const char* stationWindDirectionLabel(int idDireccVento) noexcept;
 const char* languageCode(Language language) noexcept;
 Language languageFromCodeOrDefault(const std::string& code) noexcept;
 

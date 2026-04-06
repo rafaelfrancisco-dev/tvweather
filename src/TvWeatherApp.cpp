@@ -14,6 +14,7 @@
 #include "tvweather/WarningsWindow.h"
 #include "tvweather/UvWindow.h"
 #include "tvweather/SeaWindow.h"
+#include "tvweather/ObservationsWindow.h"
 
 #include <tvision/colorsel.h>
 
@@ -362,6 +363,32 @@ double distanceKm(double latitudeA, double longitudeA,
     return earthRadiusKm * c;
 }
 
+const IpmaStation* findNearestStation(const IpmaLocation&              selectedLocation,
+                                      const std::vector<IpmaStation>& stations)
+{
+    if (!selectedLocation.latitude.has_value() || !selectedLocation.longitude.has_value())
+        return nullptr;
+
+    const IpmaStation* nearest = nullptr;
+    double bestDistance = std::numeric_limits<double>::max();
+
+    for (const auto& station : stations) {
+        if (!station.latitude.has_value() || !station.longitude.has_value())
+            continue;
+
+        const double distance = distanceKm(*selectedLocation.latitude,
+                                           *selectedLocation.longitude,
+                                           *station.latitude,
+                                           *station.longitude);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            nearest = &station;
+        }
+    }
+
+    return nearest;
+}
+
 const IpmaSeaLocation* findNearestSeaLocation(const IpmaLocation&                    selectedLocation,
                                               const std::vector<IpmaSeaLocation>& seaLocations)
 {
@@ -438,6 +465,7 @@ TMenuBar* buildMenuBar(TRect bounds, tvweather::Language language)
             *new TMenuItem(strings.activeWarnings,  cmShowWarnings,       kbF4, hcNoContext, "F4") +
             *new TMenuItem(strings.uvIndex,         cmShowUv,             kbF5, hcNoContext, "F5") +
             *new TMenuItem(strings.seaConditions,   cmShowSea,            kbF6, hcNoContext, "F6") +
+            *new TMenuItem(strings.obsMenuLabel,    cmShowObservations,   kbF7, hcNoContext, "F7") +
             newLine() +
             *new TMenuItem(strings.exitApp, cmQuit, kbCtrlQ, hcNoContext, "Ctrl-Q") +
         *new TSubMenu(strings.optionsMenu, kbAltO) +
@@ -472,13 +500,16 @@ void refreshWindowLanguage(TView* view, void* languagePtr)
         uvWindow->setLanguage(language);
     else if (auto* seaWindow = dynamic_cast<SeaWindow*>(view))
         seaWindow->setLanguage(language);
+    else if (auto* obsWindow = dynamic_cast<ObservationsWindow*>(view))
+        obsWindow->setLanguage(language);
 }
 
 bool isLocationDependentWindow(TView* view)
 {
     return dynamic_cast<ForecastWindow*>(view) != nullptr
         || dynamic_cast<UvWindow*>(view) != nullptr
-        || dynamic_cast<SeaWindow*>(view) != nullptr;
+        || dynamic_cast<SeaWindow*>(view) != nullptr
+        || dynamic_cast<ObservationsWindow*>(view) != nullptr;
 }
 
 void collectLocationDependentWindows(TView* view, void* windowsPtr)
@@ -506,10 +537,11 @@ TvWeatherApp::TvWeatherApp() :
     rebuildStatusLine();
     rebuildMenuBar();
     updateLocationCommandState();
-    locations_    = IpmaClient::fetchLocations();
-    weatherTypes_ = IpmaClient::fetchWeatherTypes();
-    windTypes_ = IpmaClient::fetchWindTypes();
+    locations_          = IpmaClient::fetchLocations();
+    weatherTypes_       = IpmaClient::fetchWeatherTypes();
+    windTypes_          = IpmaClient::fetchWindTypes();
     windDirectionTypes_ = IpmaClient::fetchWindDirectionTypes();
+    stations_           = IpmaClient::fetchStations();
 
     if (locations_.empty()) {
         messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
@@ -555,6 +587,10 @@ void TvWeatherApp::handleEvent(TEvent& event)
             break;
         case cmShowSea:
             showSea();
+            clearEvent(event);
+            break;
+        case cmShowObservations:
+            showObservations();
             clearEvent(event);
             break;
         case cmOpenOptions:
@@ -830,6 +866,44 @@ void TvWeatherApp::showUv()
                               selectedLocation_->globalIdLocal,
                               selectedLocation_->local,
                               language_));
+}
+
+void TvWeatherApp::showObservations()
+{
+    if (!ensureSelectedLocation())
+        return;
+
+    const auto* selectedLocation = findLocation(locations_, selectedLocation_->globalIdLocal);
+    if (selectedLocation == nullptr) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
+    if (stations_.empty()) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
+    const auto* station = findNearestStation(*selectedLocation, stations_);
+    if (station == nullptr) {
+        messageBox(tvweather::uiStrings(language_).networkError, mfError | mfOKButton);
+        return;
+    }
+
+    const double stationDistKm = (selectedLocation->latitude.has_value()
+                                  && selectedLocation->longitude.has_value()
+                                  && station->latitude.has_value()
+                                  && station->longitude.has_value())
+        ? distanceKm(*selectedLocation->latitude, *selectedLocation->longitude,
+                     *station->latitude,          *station->longitude)
+        : 0.0;
+
+    const auto obs = IpmaClient::fetchObservation(station->idEstacao, station->localEstacao);
+
+    insertWindow(new ObservationsWindow(obs,
+                                        stationDistKm,
+                                        selectedLocation_->local,
+                                        language_));
 }
 
 void TvWeatherApp::showSea()

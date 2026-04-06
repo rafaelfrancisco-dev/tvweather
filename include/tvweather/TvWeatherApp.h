@@ -52,12 +52,14 @@ private:
     void showWarnings();
     void showUv();
     void showSea();
+    void showObservations();
     void updateLocationCommandState();
 
     std::vector<IpmaLocation>    locations_;
     std::vector<IpmaWeatherType> weatherTypes_;
     std::vector<IpmaWindType>    windTypes_;
     std::vector<IpmaWindDirectionType> windDirectionTypes_;
+    std::vector<IpmaStation>     stations_;
     tvweather::Language          language_ {tvweather::Language::English};
     tvweather::SavedPalette      originalPalette_;
     std::optional<tvweather::SavedPalette>  palette_;

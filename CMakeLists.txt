@@ -78,6 +78,7 @@ add_library(tvweather_core STATIC
     src/WarningsWindow.cpp
     src/UvWindow.cpp
     src/SeaWindow.cpp
+    src/ObservationsWindow.cpp
 )
 
 target_compile_features(tvweather_core PUBLIC cxx_std_17)

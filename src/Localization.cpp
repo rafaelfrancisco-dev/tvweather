@@ -74,7 +74,16 @@ const UiStrings kEnglishStrings {
     "SST",
     "Sea conditions are shown for the closest coastal location.",
     "Location",
-    "Distance from selected location"
+    "Distance from selected location",
+    "Rain intensity",
+    "~R~eal-time...",
+    " - Current Conditions",
+    "Station",
+    "Observed at",
+    "Pressure",
+    "Radiation",
+    "Precipitation",
+    "No observation data available."
 };
 
 const UiStrings kPortugueseStrings {
@@ -147,7 +156,16 @@ const UiStrings kPortugueseStrings {
     "TSM",
     "As condições do mar são mostradas para a localidade costeira mais próxima.",
     "Localidade",
-    "Distância desde a localidade seleccionada"
+    "Distância desde a localidade seleccionada",
+    "Intensidade da chuva",
+    "Tempo ~R~eal...",
+    " - Condições Atuais",
+    "Esta\xE7\xE3o",
+    "Observado em",
+    "Press\xE3o",
+    "Radia\xE7\xE3o",
+    "Precipita\xE7\xE3o",
+    "Sem dados de observa\xE7\xE3o."
 };
 
 } // namespace
@@ -283,6 +301,27 @@ const char* windStrengthLabel(int classWindSpeed, Language language) noexcept
     if (classWindSpeed >= 2)
         return language == Language::Portuguese ? "Moderado" : "Moderate";
     return language == Language::Portuguese ? "Fraco" : "Light";
+}
+
+const char* precipIntensityLabel(int id, Language language) noexcept
+{
+    switch (id) {
+    case 0: return language == Language::Portuguese ? "Sem precipita\xE7\xE3o" : "No precipitation";
+    case 1: return language == Language::Portuguese ? "Fraco"    : "Weak";
+    case 2: return language == Language::Portuguese ? "Moderado" : "Moderate";
+    case 3: return language == Language::Portuguese ? "Forte"    : "Strong";
+    default: return "--";
+    }
+}
+
+const char* stationWindDirectionLabel(int idDireccVento) noexcept
+{
+    static constexpr const char* labels[] = {
+        "N", "NE", "E", "SE", "S", "SW", "W", "NW", "Var", "--"
+    };
+    if (idDireccVento >= 0 && idDireccVento <= 8)
+        return labels[idDireccVento];
+    return "--";
 }
 
 const char* languageCode(Language language) noexcept

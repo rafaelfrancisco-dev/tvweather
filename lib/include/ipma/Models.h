@@ -64,6 +64,7 @@ struct IpmaAggregateHour {
     std::optional<float>  temperature;
     std::optional<float>  feltTemperature;
     std::optional<int>    precipProbability;
+    std::optional<int>    precipIntensity;   // idIntensidadePrecipita: 1=Weak 2=Moderate 3=Strong
     int                   idWeatherType;
     std::optional<float>  humidity;
     std::optional<float>  windSpeed;
@@ -127,4 +128,24 @@ struct IpmaSeaForecast {
     int                             globalIdLocal;
     std::string                     localName;
     std::vector<IpmaSeaForecastDay> days;
+};
+
+struct IpmaStation {
+    int         idEstacao;
+    std::string localEstacao;
+    std::optional<double> latitude;
+    std::optional<double> longitude;
+};
+
+struct IpmaStationObservation {
+    int         idEstacao;
+    std::string localEstacao;
+    std::string timestamp;
+    std::optional<float> temperatura;
+    std::optional<float> intensidadeVentoKM;
+    std::optional<int>   idDireccVento;
+    std::optional<float> humidade;
+    std::optional<float> pressao;
+    std::optional<float> radiacao;
+    std::optional<float> precAcumulada;
 };

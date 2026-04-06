@@ -25,10 +25,11 @@ A terminal weather application for Portugal, built with C++ and [TurboVision](ht
 
 - **Location picker with search** — all IPMA forecast locations (mainland Portugal + Madeira + Azores) with a live filter field to narrow by name
 - **Selected location state** — the last picked location becomes the active location, is shown in the status bar, is reused by location-based menus, and persists across restarts until cleared
-- **Hourly aggregate forecast** — forecast window built from IPMA's aggregate locality feed with a selectable day list, hourly rows, focused-hour details, inline warnings, marine values when present, and placeholder-only dates filtered out
+- **Hourly aggregate forecast** — forecast window built from IPMA's aggregate locality feed with a selectable day list, hourly rows, focused-hour details, inline warnings, marine values when present, and placeholder-only dates filtered out; hourly detail includes precipitation intensity (Weak/Moderate/Strong) when available
 - **Active warnings** — yellow, orange and red meteorological warnings, scrollable, with type and area
 - **UV Index** — daily UV index forecast per location with time intervals (e.g. 13h–15h)
 - **Sea conditions** — 3-day wave height, wave period, wave direction, and sea surface temperature for 12 coastal locations
+- **Current conditions** — real-time measured data from the nearest of 262 IPMA weather stations, including atmospheric pressure (hPa), solar radiation (W/m²), accumulated precipitation (mm), temperature, wind and humidity
 - **Refresh** — re-fetch data for the active window at any time with F2
 - **Error notifications** — message box shown when API calls fail or return empty data
 - **Options dialog** — dedicated settings window for language preferences
@@ -114,7 +115,8 @@ In the forecast window, the day list is a standard Turbo Vision list view and th
 3. `Forecast...` reuses that active location directly.
 4. `UV Index...` reuses that active location directly.
 5. `Sea Conditions...` reuses the active location and automatically picks the nearest available coastal sea location from the IPMA sea dataset.
-6. `Clear Location` removes the active location from memory and from the saved config, closes all open forecast/UV/sea windows, and leaves location-independent windows alone so the next location-dependent action can ask again.
+6. `Real-time...` reuses the active location and automatically picks the nearest of the 262 IPMA surface weather stations.
+7. `Clear Location` removes the active location from memory and from the saved config, closes all open forecast/UV/sea/observations windows, and leaves location-independent windows alone so the next location-dependent action can ask again.
 
 **Weather menu items:**
 
@@ -124,6 +126,7 @@ In the forecast window, the day list is a standard Turbo Vision list view and th
 | Active Warnings | F4 | Fetches and displays current non-green meteorological warnings |
 | UV Index… | F5 | Uses the active location; if none is selected, opens the location picker first |
 | Sea Conditions… | F6 | Uses the active location and automatically matches it to the nearest available coastal sea location |
+| Real-time… | F7 | Uses the active location and shows current conditions from the nearest IPMA weather station |
 | Exit | Ctrl-Q | Quit the application |
 
 **Options menu items:**
@@ -196,7 +199,8 @@ tvweather/
 │   ├── ForecastWindow.h          # Aggregate forecast window
 │   ├── WarningsWindow.h
 │   ├── UvWindow.h
-│   └── SeaWindow.h
+│   ├── SeaWindow.h
+│   └── ObservationsWindow.h      # Real-time station observations window
 ├── src/                          # UI layer implementation
 │   ├── TvWeatherApp.cpp
 │   ├── Localization.cpp
@@ -206,7 +210,8 @@ tvweather/
 │   ├── ForecastWindow.cpp        # Composite day list + hourly grid + detail + warnings window
 │   ├── WarningsWindow.cpp
 │   ├── UvWindow.cpp
-│   └── SeaWindow.cpp
+│   ├── SeaWindow.cpp
+│   └── ObservationsWindow.cpp
 ├── tests/
 │   ├── MiniTest.h                # Lightweight local test harness
 │   ├── IpmaClientTest.cpp        # Unit tests for ipmalib
@@ -260,12 +265,17 @@ The location picker search uses `TInputLine` at the top of the dialog. On each k
 
 | Endpoint | Used for |
 |---|---|
-| `/open-data/distrits-islands.json` | Location list |
-| `/open-data/forecast/meteorology/cities/daily/{id}.json` | 5-day forecast |
-| `/open-data/forecast/warnings/warnings_www.json` | Active warnings |
+| `/public-data/forecast/locations.json` | Location list (primary) |
+| `/open-data/distrits-islands.json` | Location list (fallback) |
+| `/public-data/forecast/aggregate/{id}.json` | Hourly aggregate forecast (temperature, precipitation intensity, wind, humidity, sea state, UV) |
+| `/open-data/forecast/meteorology/cities/daily/{id}.json` | 5-day daily forecast |
+| `/public-data/warnings/warnings_www.json` | Active warnings (primary) |
+| `/open-data/forecast/warnings/warnings_www.json` | Active warnings (fallback) |
 | `/open-data/weather-type-classe.json` | Weather condition descriptions |
 | `/open-data/forecast/meteorology/uv/uv.json` | UV index forecast |
 | `/open-data/sea-locations.json` | Coastal location list |
 | `/open-data/forecast/oceanography/daily/hp-daily-sea-forecast-day{0,1,2}.json` | 3-day sea forecast |
+| `/open-data/observation/meteorology/stations/stations.json` | Weather station list (262 stations with coordinates) |
+| `/open-data/observation/meteorology/stations/observations.json` | Hourly surface observations (pressure, radiation, precipitation, temperature, wind, humidity) |
 
 All requests are made via `curl` (blocking, 10 s timeout). Failures return empty results and show an error dialog; the app remains usable after a failed fetch.

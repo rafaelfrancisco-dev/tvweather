@@ -16,9 +16,12 @@ public:
     static std::vector<IpmaWindType>    fetchWindTypes();
     static std::vector<IpmaWindDirectionType> fetchWindDirectionTypes();
     static std::vector<IpmaUvEntry>     fetchUv();
-    static std::vector<IpmaSeaLocation> fetchSeaLocations();
-    static IpmaSeaForecast              fetchSeaForecast(int globalIdLocal,
-                                                         const std::string& localName);
+    static std::vector<IpmaSeaLocation>  fetchSeaLocations();
+    static IpmaSeaForecast               fetchSeaForecast(int globalIdLocal,
+                                                          const std::string& localName);
+    static std::vector<IpmaStation>      fetchStations();
+    static IpmaStationObservation        fetchObservation(int stationId,
+                                                          const std::string& localEstacao);
 
     // ── Parse-only (exposed for unit tests) ──────────────────────────────
     static std::vector<IpmaLocation>    parseLocations(const std::string& json);
@@ -38,6 +41,10 @@ public:
     static std::vector<IpmaSeaLocation> parseSeaLocations(const std::string& json);
     static std::vector<IpmaSeaForecastDay> parseSeaForecastDay(const std::string& json,
                                                                 int globalIdLocal);
+    static std::vector<IpmaStation>     parseStations(const std::string& json);
+    static IpmaStationObservation       parseObservation(const std::string& json,
+                                                         int stationId,
+                                                         const std::string& localEstacao);
 
 private:
     static std::string httpGet(const std::string& url);

@@ -10,3 +10,4 @@ constexpr int cmRefresh            = 105; // Window refresh            (F2)
 constexpr int cmClearLocation      = 106; // Weather > Clear Location  (F8)
 constexpr int cmOpenColors         = 107; // Options > Colors
 constexpr int cmResetColors        = 108; // Color dialog reset to defaults
+constexpr int cmShowObservations   = 109; // Weather > Current Conditions  (F7)
