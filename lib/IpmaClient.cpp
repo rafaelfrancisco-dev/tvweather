@@ -469,7 +469,7 @@ std::vector<IpmaUvEntry> IpmaClient::parseUv(const std::string& raw)
         for (const auto& item : j) {
             IpmaUvEntry e;
             e.globalIdLocal = item.value("globalIdLocal", 0);
-            e.iUv           = item.value("iUv", 0.0f);
+            e.iUv           = parseFloat(item, "iUv").value_or(0.0f);
             e.intervaloHora = item.value("intervaloHora", "");
             e.data          = item.value("data", "");
             e.idPeriodo     = item.value("idPeriodo", 0);
